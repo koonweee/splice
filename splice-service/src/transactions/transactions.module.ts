@@ -4,7 +4,7 @@ import { TransactionsController } from 'src/transactions/transcations.controller
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VaultModule } from 'src/vault/vault.module';
-
+import { ScraperModule } from 'src/scraper/scraper.module';
 @Module({
   controllers: [TransactionsController],
   imports: [
@@ -20,6 +20,7 @@ import { VaultModule } from 'src/vault/vault.module';
     }),
     VaultModule,
     ConfigModule,
+    ScraperModule,
   ],
   providers: [TransactionsService],
   exports: [TransactionsService],

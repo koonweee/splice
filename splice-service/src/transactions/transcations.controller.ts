@@ -1,8 +1,8 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from 'src/auth/auth.guard';
 import { TransactionsService } from 'src/transactions/transactions.service';
-
+import { VaultTokenGuard } from 'src/auth/vault-token.guard';
+import { VaultToken } from 'src/auth/decorators/vault-token.decorator';
 @Controller('transactions')
 export class TransactionsController {
   constructor(
@@ -16,8 +16,8 @@ export class TransactionsController {
   }
 
   @Get('accounts')
-  @UseGuards(AuthGuard)
-  async getAccounts() {
+  @UseGuards(VaultTokenGuard)
+  async getAccounts(@VaultToken() vaultToken: string) {
     return this.transactionsService.getAccounts();
   }
 
