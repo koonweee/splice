@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AccountTransactionsResponse, GetAccountsResponse } from '@splice/api';
+import { ScraperService } from 'src/scraper/scraper.service';
 import { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class TransactionsService {
   constructor(
     private readonly configService: ConfigService,
     private readonly vaultService: VaultService,
+    private readonly scraperService: ScraperService,
   ) {}
 
   /**
@@ -15,13 +17,9 @@ export class TransactionsService {
    * @param accountName The name of the account to get transactions for
    * @returns Promise containing transactions and account information
    */
-  async getTransactionsForAccount(accountName: string): Promise<AccountTransactionsResponse> {
-    // TODO: Implement transaction retrieval logic
-    // This might involve:
-    // 1. Fetching transactions from a database
-    // 2. Processing/transforming the data
-    // 3. Applying any filters or pagination
-    throw new Error('Not implemented');
+  async getTransactionsForAccount(accountName: string, accessToken: string): Promise<object> {
+    const data = await this.scraperService.scrapeWebsite(accountName, accessToken);
+    return data;
   }
 
   /**

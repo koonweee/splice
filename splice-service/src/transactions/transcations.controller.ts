@@ -10,9 +10,10 @@ export class TransactionsController {
     private readonly jwtService: JwtService,
   ) {}
 
-  @Get('byAccount')
-  async getByAccount(@Query('accountName') accountName: string) {
-    return this.transactionsService.getTransactionsForAccount(accountName);
+  @Get('by-account')
+  @UseGuards(VaultTokenGuard)
+  async getByAccount(@Query('accountName') accountName: string, @VaultToken() vaultToken: string) {
+    return this.transactionsService.getTransactionsForAccount(accountName, vaultToken);
   }
 
   @Get('accounts')
@@ -21,10 +22,10 @@ export class TransactionsController {
     return this.transactionsService.getAccounts();
   }
 
-  @Get('generate-jwt')
-  async generateJwt() {
-    return this.jwtService.signAsync({ userId: 'koonweee' });
-  }
+  // @Get('generate-jwt')
+  // async generateJwt() {
+  //   return this.jwtService.signAsync({ userId: 'koonweee' });
+  // }
 
   @Get('secret')
   async getSecret(@Query('secretId') secretId: string ) {

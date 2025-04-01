@@ -38,7 +38,7 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async scrapeWebsite(websiteName: string): Promise<ScrapedData> {
+  async scrapeWebsite(websiteName: string, accessToken: string): Promise<ScrapedData> {
     if (!this.browser) {
       this.logger.error('Browser not initialized');
       throw new HttpException('Browser not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -56,10 +56,6 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
     }
 
     this.logger.log(`Retrieving secret for ${websiteName}: ${secretUuid}`);
-    const accessToken = this.configService.get<string>('bitwarden.accessToken');
-    if (!accessToken) {
-      throw new HttpException('Bitwarden access token not configured', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
     const secret = await this.vaultService.getSecret(secretUuid, accessToken);
 
     const page = await this.browser.newPage();
