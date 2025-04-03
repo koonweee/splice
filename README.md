@@ -58,6 +58,9 @@ npm run dev
 
 1. Create a [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) account and generate a Machine Account Access Token from their dashboard.
 
+2. Create a secret in Bitwarden with your financial service credentials
+  * See `parseCredentialsFromSecret` in [dbs.strategy.ts](splice-service/src/scraper/strategies/dbs.strategy.ts) to understand how secret values should be formatted
+
 2. Create a user in Splice:
 ```bash
 curl -X POST http://localhost:3000/users \
@@ -127,9 +130,9 @@ Splice uses AES-256-GCM encryption to securely store Bitwarden access tokens. He
    - A random initialization vector (IV) is generated
    - The data is encrypted using AES-256-GCM with the user's unique key
    - The IV and authentication tag are combined to create a secret returned to the user
-4. For subsequent requests:
+4. For subsequent requests for financial data:
    - The user provides their secret in the X-Secret header
-   - Splice uses this to decrypt their stored API keys
+   - Splice uses this to decrypt their stored API keys and retrieve the relevant financial service's credentials
 
 The implementation can be found in [splice-service/src/api-key-store/api-key-store.service.ts](splice-service/src/api-key-store/api-key-store.service.ts).
 
