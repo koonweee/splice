@@ -5,6 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { VaultModule } from 'src/vault/vault.module';
 import { ScraperModule } from 'src/scraper/scraper.module';
+import { ApiKeyStoreModule } from 'src/api-key-store/api-key-store.module';
 @Module({
   controllers: [TransactionsController],
   imports: [
@@ -21,6 +22,7 @@ import { ScraperModule } from 'src/scraper/scraper.module';
     VaultModule,
     ConfigModule,
     ScraperModule,
+    ApiKeyStoreModule,
   ],
   providers: [TransactionsService],
   exports: [TransactionsService],

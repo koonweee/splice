@@ -22,6 +22,8 @@ type AccountInformation = {
   type: AccountType;
 }
 
+const ENABLE_SCREENSHOTS = false;
+
 @Injectable()
 export class DBSStrategy implements ScraperStrategy {
   name = 'dbs';
@@ -29,11 +31,16 @@ export class DBSStrategy implements ScraperStrategy {
 
   private async screenshotStep(page: Page, stepName: string, logger: Logger) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    await page.screenshot({
-        path: `screenshots/${timestamp}-${stepName}.png`,
-        fullPage: true
-    });
-    logger.debug(`Screenshot saved: ${stepName}`);
+    if (ENABLE_SCREENSHOTS) {
+      await page.screenshot({
+          path: `screenshots/${timestamp}-${stepName}.png`,
+          fullPage: true
+      });
+      logger.debug(`Screenshot saved: ${stepName}`);
+    }
+    else {
+      logger.debug(`Skipping screenshot for ${stepName}`);
+    }
   }
 
   private parseCredentialsFromSecret(secret: string): { username: string, password: string } {

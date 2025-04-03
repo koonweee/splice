@@ -1,24 +1,26 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Query, Headers, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ApiKeyType } from '@splice/api';
+import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
-import { VaultTokenGuard } from 'src/auth/vault-token.guard';
-import { VaultToken } from 'src/auth/decorators/vault-token.decorator';
 @Controller('transactions')
 export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
-    private readonly jwtService: JwtService,
+    private readonly apiKeyStoreService: ApiKeyStoreService,
   ) {}
 
   @Get('by-account')
-  @UseGuards(VaultTokenGuard)
-  async getByAccount(@Query('accountName') accountName: string, @VaultToken() vaultToken: string) {
-    return this.transactionsService.getTransactionsForAccount(accountName, vaultToken);
+  async getByAccount(@Query('accountName') accountName: string, @Query('userUuid') userUuid: string, @Headers('X-Secret') secret: string) {
+    if (!secret || !userUuid || !accountName) {
+      throw new BadRequestException('Missing required parameters');
+    }
+    const authToken = await this.apiKeyStoreService.retrieveApiKey(userUuid, ApiKeyType.BITWARDEN, secret);
+    return this.transactionsService.getTransactionsForAccount(accountName, authToken);
   }
 
   @Get('accounts')
-  @UseGuards(VaultTokenGuard)
-  async getAccounts(@VaultToken() vaultToken: string) {
+  async getAccounts() {
     return this.transactionsService.getAccounts();
   }
 
