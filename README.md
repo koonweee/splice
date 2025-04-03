@@ -4,7 +4,7 @@ An open-source, self-hosted, and extensible alternative to Plaid's transaction A
 
 The current implementation is a POC with support for checking/savings accounts in DBS Singapore accounts.
 
-> 🚨 **Important**: Splice handles sensitive financial credentials. Before proceeding, please read the [Security Implementation](#-security-implementation) section to understand the security implications and risks of self-hosting Splice.
+> 🚨 **Important**: Splice handles sensitive financial credentials. Before proceeding, please read the [Security](#-security) section to understand the security implications and risks of self-hosting Splice.
 
 ## 🌟 Features
 
@@ -12,7 +12,7 @@ The current implementation is a POC with support for checking/savings accounts i
 - [Extensible architecture for adding new data sources](#-adding-new-financial-services)
   - Playwright integration for financial services without APIs
 
-## 🚀 Getting Started
+## 🚀 Getting started
 
 ### Installation
 
@@ -56,8 +56,6 @@ npm run dev
 
 ## 📝 Usage
 
-### Setup Steps
-
 1. Create a [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) account and generate a Machine Account Access Token from their dashboard.
 
 2. Create a user in Splice:
@@ -83,12 +81,7 @@ curl -X POST "http://localhost:3000/transactions/by-account?accountName=dbs&user
 
 Note: The `accountName` parameter corresponds to the financial service strategy name in the codebase (e.g., ["dbs" for DBS Bank](splice-service/src/scraper/strategies/dbs.strategy.ts)).
 
-## 🔄 Flow Diagram
-
-> **Viewing the diagram:**
-> - On GitHub: The diagram renders automatically in the browser
-> - In VSCode: Install the [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) extension
-> - Alternative: Visit [Mermaid Live Editor](https://mermaid.live) and paste the diagram code
+## 🔄 Flow diagram
 
 ```mermaid
 sequenceDiagram
@@ -120,7 +113,7 @@ sequenceDiagram
     S-->>U: Standardized transactions
 ```
 
-## 🔒 Security Implementation
+## 🔒 Security
 > ⚠️ Please submit an issue for recommendations on improving security. Options are limited for banks that do not provide OAuth support
 
 Splice uses AES-256-GCM encryption to securely store Bitwarden access tokens. Here's how it works:
@@ -144,9 +137,9 @@ The implementation can be found in [splice-service/src/api-key-store/api-key-sto
 >
 > **Do consider this risk when deciding to self-host Splice**
 
-## 🔧 Adding New Financial Services
+## 🔧 Adding a new financial service
 
-Splice is designed to be extensible. You can add support for new financial institutions by implementing a scraping strategy. Here's how:
+Splice is designed to be extensible. You can add support for new financial institutions by implementing a scraping strategy:
 
 1. Create a new strategy file in `splice-service/src/scraper/strategies/`:
 ```typescript
@@ -187,13 +180,13 @@ The scraper service will automatically:
 
 See [splice-service/src/scraper/strategies/dbs.strategy.ts](splice-service/src/scraper/strategies/dbs.strategy.ts) for a complete example implementation.
 
-## 🚀 Future Improvements
+## 🚀 Future improvements
 - Implement 2FA requirement when attempting to decrypt access tokens using secrets
   - Adds an additional layer of security, mitigate risks if a secret is compromised
 
 - Store list of financial services per user and their corresponding secret UUIDs
 
-## 📁 Project Structure
+## 📁 Project structure
 
 ```
 splice
