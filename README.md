@@ -2,7 +2,7 @@
 
 An open-source, self-hosted, and extensible alternative to Plaid's transaction API. Splice allows you to aggregate and normalize financial transaction data from any source while maintaining full control over your data and infrastructure.
 
-The current implementation is a POC with support for checking/savings accounts in DBS Singapore accounts.
+**The current implementation is a POC** with support for checking/savings accounts in DBS Singapore accounts.
 
 > 🚨 **Important**: Splice handles sensitive financial credentials. Before proceeding, please read the [Security](#-security) section to understand the security implications and risks of self-hosting Splice.
 
