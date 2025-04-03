@@ -1,98 +1,218 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Splice 🔗
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+An open-source, self-hosted, and extensible alternative to Plaid's transaction API. Splice allows you to aggregate and normalize financial transaction data from any source while maintaining full control over your data and infrastructure.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+The current implementation is a POC with support for checking/savings accounts in DBS Singapore accounts.
 
-## Description
+> 🚨 **Important**: Splice handles sensitive financial credentials. Before proceeding, please read the [Security Implementation](#-security-implementation) section to understand the security implications and risks of self-hosting Splice.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🌟 Features
 
-## Project setup
+- Self-hosted solution for financial data aggregation
+- [Extensible architecture for adding new data sources](#-adding-new-financial-services)
+  - Playwright integration for financial services without APIs
 
+## 🚀 Getting Started
+
+### Installation
+
+1. Clone the repository:
 ```bash
-$ npm install
+git clone <repo-url>
+cd splice-service
 ```
 
-## Compile and run the project
-
+2. Install dependencies:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+npm install
 ```
 
-## Run tests
-
+3. Set up your environment variables:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Edit the `.env` file with your configuration:
+- `DBS_SECRET_UUID`: UUID of DBS secret stored in Bitwarden
+- `API_STORE_ENCRYPTION_KEY`: Encryption key for sensitive data (generate with `openssl rand -hex 32`)
+- Database configuration:
+  - `POSTGRES_USER`
+  - `POSTGRES_PASSWORD`
+  - `POSTGRES_DB`
+  - `POSTGRES_HOST`
+  - `POSTGRES_PORT`
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Running Splice
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+1. Start the database:
 ```bash
-$ npm install -g mau
-$ mau deploy
+npm run db
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+2. Start the development server:
+```bash
+npm run dev
+```
 
-## Resources
+## 📝 Usage
 
-Check out a few resources that may come in handy when working with NestJS:
+### Setup Steps
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+1. Create a [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) account and generate a Machine Account Access Token from their dashboard.
 
-## Support
+2. Create a user in Splice:
+```bash
+curl -X POST http://localhost:3000/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "your_username", "email": "your_email@example.com"}'
+```
+Response will include your `userUuid`.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+3. Store your Bitwarden access token:
+```bash
+curl -X POST http://localhost:3000/api-key-store/<your-user-uuid>?keyType=BITWARDEN \
+  -H "X-Api-Key: your_bitwarden_access_token"
+```
+Save the returned secret from the `X-Secret` response header.
 
-## Stay in touch
+4. Fetch financial transactions:
+```bash
+curl -X POST "http://localhost:3000/transactions/by-account?accountName=dbs&userUuid=<your-user-uuid>" \
+  -H "X-Secret: your_splice_secret"
+```
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Note: The `accountName` parameter corresponds to the financial service strategy name in the codebase (e.g., ["dbs" for DBS Bank](splice-service/src/scraper/strategies/dbs.strategy.ts)).
 
-## License
+## 🔄 Flow Diagram
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+> **Viewing the diagram:**
+> - On GitHub: The diagram renders automatically in the browser
+> - In VSCode: Install the [Markdown Preview Mermaid Support](https://marketplace.visualstudio.com/items?itemName=bierner.markdown-mermaid) extension
+> - Alternative: Visit [Mermaid Live Editor](https://mermaid.live) and paste the diagram code
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant US as Users Service
+    participant KS as API Key Store
+    participant V as Vault Service
+    participant S as Scraper Service
+    participant B as Bank Website
+
+    %% User Creation
+    U->>US: POST /users<br>{username, email}
+    US-->>U: userUuid
+
+    %% Store Bitwarden Token
+    U->>KS: POST /api-key-store/{userUuid}<br>X-Api-Key: bitwarden_token
+    KS->>KS: Encrypt token
+    KS-->>U: secret
+
+    %% Fetch Transactions
+    U->>S: POST /transactions/by-account<br>X-Secret: secret
+    S->>KS: Decrypt Bitwarden token
+    KS-->>S: bitwarden_token
+    S->>V: Get bank credentials<br>using Bitwarden token
+    V-->>S: bank_credentials
+    S->>B: Automated login & scraping<br>using Playwright
+    B-->>S: Raw transaction data
+    S->>S: Normalize data
+    S-->>U: Standardized transactions
+```
+
+## 🔒 Security Implementation
+> ⚠️ Please submit an issue for recommendations on improving security. Options are limited for banks that do not provide OAuth support
+
+Splice uses AES-256-GCM encryption to securely store Bitwarden access tokens. Here's how it works:
+
+1. A master encryption key is derived from your `API_STORE_ENCRYPTION_KEY` environment variable
+2. For each user, a unique encryption key is derived using:
+   - PBKDF2 key derivation with 100,000 iterations
+   - SHA-256 hashing
+   - The user's UUID as salt
+3. When storing an API key:
+   - A random initialization vector (IV) is generated
+   - The data is encrypted using AES-256-GCM with the user's unique key
+   - The IV and authentication tag are combined to create a secret returned to the user
+4. For subsequent requests:
+   - The user provides their secret in the X-Secret header
+   - Splice uses this to decrypt their stored API keys
+
+The implementation can be found in [splice-service/src/api-key-store/api-key-store.service.ts](splice-service/src/api-key-store/api-key-store.service.ts).
+
+> ⚠️ **Security Considerations**: While the Bitwarden access token is encrypted, storing access tokens that can retrieve financial service credentials represents a significant security risk.
+>
+> **Do consider this risk when deciding to self-host Splice**
+
+## 🔧 Adding New Financial Services
+
+Splice is designed to be extensible. You can add support for new financial institutions by implementing a scraping strategy. Here's how:
+
+1. Create a new strategy file in `splice-service/src/scraper/strategies/`:
+```typescript
+@Injectable()
+export class YourBankStrategy implements ScraperStrategy {
+  name = 'your_bank';  // This will be the accountName in API requests
+  startUrl = 'https://your-bank-login-url.com';
+
+  async scrape(secret: string, page: Page, logger: Logger): Promise<ScrapedData> {
+    // 1. Parse credentials from secret (stored in Bitwarden)
+    // 2. Navigate through login flow
+    // 3. Extract and normalize transaction data
+    // 4. Return standardized transaction data
+  }
+}
+```
+
+2. Register your strategy in [splice-service/src/scraper/scraper.module.ts](splice-service/src/scraper/scraper.module.ts):
+```typescript
+const STRATEGIES = [DBSStrategy, YourBankStrategy] as const;
+```
+
+3. Add the secret UUID to your environment configuration:
+```typescript
+bitwarden: {
+  secrets: {
+    dbs: 'existing-uuid',
+    your_bank: 'your-secret-uuid'
+  }
+}
+```
+
+The scraper service will automatically:
+- Initialize a Playwright browser instance
+- Load your strategy when requested
+- Fetch credentials from Bitwarden
+- Provide error handling and logging
+
+See [splice-service/src/scraper/strategies/dbs.strategy.ts](splice-service/src/scraper/strategies/dbs.strategy.ts) for a complete example implementation.
+
+## 🚀 Future Improvements
+- Implement 2FA requirement when attempting to decrypt access tokens using secrets
+  - Adds an additional layer of security, mitigate risks if a secret is compromised
+
+- Store list of financial services per user and their corresponding secret UUIDs
+
+## 📁 Project Structure
+
+```
+splice
+├── splice-api             # Shared types and interfaces
+└── splice-service         # Main service implementation
+    ├── src
+    │   ├── api-key-store  # Encrypted storage for API keys
+    │   ├── scraper        # Web scraping infrastructure
+    │   │   └── strategies # Bank-specific scraping implementations
+    │   ├── users          # User management
+    │   └── vault          # Bitwarden Secrets Manager integration
+    ├── downloads          # Temporary storage for downloaded statements
+    └── screenshots        # Optional scraping debug screenshots
+```
+
+## 🏗️ Architecture
+
+Splice is built on:
+- NestJS + TypeORM for backend
+- PostgreSQL for data storage
+- Playwright for scraper functionality
+- Bitwarden Secrets Manager to store bank login details
