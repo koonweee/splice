@@ -7,6 +7,7 @@
   "scripts": {
     "db": "docker compose -f docker-compose.yml up",
     "dev": "nest start --tsc --watch",
+    "dev:full": "docker compose -f docker-compose.yml up -d && nest start --tsc --watch",
     "build": "nest build",
     "format": "biome format --write .",
     "start": "nest start",

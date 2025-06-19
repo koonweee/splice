@@ -1,6 +1,6 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import type { User } from './user.entity';
-import type { UserService } from './user.service';
+import { UserService } from './user.service';
 
 class CreateUserDto {
   username: string;
