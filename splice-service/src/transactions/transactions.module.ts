@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TransactionsService } from './transactions.service';
-import { TransactionsController } from 'src/transactions/transcations.controller';
-import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { VaultModule } from 'src/vault/vault.module';
-import { ScraperModule } from 'src/scraper/scraper.module';
+import { JwtModule } from '@nestjs/jwt';
 import { ApiKeyStoreModule } from 'src/api-key-store/api-key-store.module';
+import { ScraperModule } from 'src/scraper/scraper.module';
+import { TransactionsController } from 'src/transactions/transcations.controller';
+import { VaultModule } from 'src/vault/vault.module';
+import { TransactionsService } from './transactions.service';
 @Module({
   controllers: [TransactionsController],
   imports: [

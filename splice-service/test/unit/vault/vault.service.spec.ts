@@ -1,5 +1,5 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { Logger } from '@nestjs/common';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { VaultService } from '../../../src/vault/vault.service';
 
 // Mock the Bitwarden SDK
@@ -65,40 +65,28 @@ describe('VaultService', () => {
       const authError = new Error('Invalid access token');
       mockAuth.loginAccessToken.mockRejectedValue(authError);
 
-      await expect(
-        service.getSecret(mockSecretId, mockAccessToken),
-      ).rejects.toThrow(authError);
+      await expect(service.getSecret(mockSecretId, mockAccessToken)).rejects.toThrow(authError);
 
-      expect(logger).toHaveBeenCalledWith(
-        `Failed to retrieve secret ${mockSecretId}: Invalid access token`,
-      );
+      expect(logger).toHaveBeenCalledWith(`Failed to retrieve secret ${mockSecretId}: Invalid access token`);
     });
 
     it('should handle secret retrieval errors', async () => {
       const secretError = new Error('Secret not found');
       mockSecrets.get.mockRejectedValue(secretError);
 
-      await expect(
-        service.getSecret(mockSecretId, mockAccessToken),
-      ).rejects.toThrow(secretError);
+      await expect(service.getSecret(mockSecretId, mockAccessToken)).rejects.toThrow(secretError);
 
       expect(mockAuth.loginAccessToken).toHaveBeenCalledWith(mockAccessToken);
-      expect(logger).toHaveBeenCalledWith(
-        `Failed to retrieve secret ${mockSecretId}: Secret not found`,
-      );
+      expect(logger).toHaveBeenCalledWith(`Failed to retrieve secret ${mockSecretId}: Secret not found`);
     });
 
     it('should handle network errors', async () => {
       const networkError = new Error('Network timeout');
       mockAuth.loginAccessToken.mockRejectedValue(networkError);
 
-      await expect(
-        service.getSecret(mockSecretId, mockAccessToken),
-      ).rejects.toThrow(networkError);
+      await expect(service.getSecret(mockSecretId, mockAccessToken)).rejects.toThrow(networkError);
 
-      expect(logger).toHaveBeenCalledWith(
-        `Failed to retrieve secret ${mockSecretId}: Network timeout`,
-      );
+      expect(logger).toHaveBeenCalledWith(`Failed to retrieve secret ${mockSecretId}: Network timeout`);
     });
 
     it('should handle undefined secret values', async () => {
@@ -148,7 +136,7 @@ describe('VaultService', () => {
     });
 
     it('should handle long secret IDs', async () => {
-      const longSecretId = 'very-long-secret-id-' + 'x'.repeat(100);
+      const longSecretId = `very-long-secret-id-${'x'.repeat(100)}`;
 
       await service.getSecret(longSecretId, mockAccessToken);
 
@@ -160,13 +148,9 @@ describe('VaultService', () => {
       bitwardenError.name = 'BitwardenError';
       mockSecrets.get.mockRejectedValue(bitwardenError);
 
-      await expect(
-        service.getSecret(mockSecretId, mockAccessToken),
-      ).rejects.toThrow(bitwardenError);
+      await expect(service.getSecret(mockSecretId, mockAccessToken)).rejects.toThrow(bitwardenError);
 
-      expect(logger).toHaveBeenCalledWith(
-        `Failed to retrieve secret ${mockSecretId}: Insufficient permissions`,
-      );
+      expect(logger).toHaveBeenCalledWith(`Failed to retrieve secret ${mockSecretId}: Insufficient permissions`);
     });
   });
 
@@ -185,9 +169,7 @@ describe('VaultService', () => {
         throw new Error('Client creation failed');
       });
 
-      await expect(
-        service.getSecret(mockSecretId, mockAccessToken),
-      ).rejects.toThrow('Client creation failed');
+      await expect(service.getSecret(mockSecretId, mockAccessToken)).rejects.toThrow('Client creation failed');
     });
   });
 });

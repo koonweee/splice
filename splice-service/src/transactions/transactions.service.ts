@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AccountTransactionsResponse, GetAccountsResponse } from '@splice/api';
-import { ScraperService } from 'src/scraper/scraper.service';
-import { VaultService } from 'src/vault/vault.service';
+import type { ConfigService } from '@nestjs/config';
+import type { GetAccountsResponse } from '@splice/api';
+import type { ScraperService } from 'src/scraper/scraper.service';
+import type { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class TransactionsService {
@@ -17,14 +17,8 @@ export class TransactionsService {
    * @param accountName The name of the account to get transactions for
    * @returns Promise containing transactions and account information
    */
-  async getTransactionsForAccount(
-    accountName: string,
-    accessToken: string,
-  ): Promise<object> {
-    const data = await this.scraperService.scrapeWebsite(
-      accountName,
-      accessToken,
-    );
+  async getTransactionsForAccount(accountName: string, accessToken: string): Promise<object> {
+    const data = await this.scraperService.scrapeWebsite(accountName, accessToken);
     return data;
   }
 

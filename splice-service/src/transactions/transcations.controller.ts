@@ -1,14 +1,7 @@
-import {
-  Controller,
-  Get,
-  Query,
-  Headers,
-  BadRequestException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/common';
 import { ApiKeyType } from '@splice/api';
-import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
-import { TransactionsService } from 'src/transactions/transactions.service';
+import type { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
+import type { TransactionsService } from 'src/transactions/transactions.service';
 @Controller('transactions')
 export class TransactionsController {
   constructor(
@@ -25,15 +18,8 @@ export class TransactionsController {
     if (!secret || !userUuid || !accountName) {
       throw new BadRequestException('Missing required parameters');
     }
-    const authToken = await this.apiKeyStoreService.retrieveApiKey(
-      userUuid,
-      ApiKeyType.BITWARDEN,
-      secret,
-    );
-    return this.transactionsService.getTransactionsForAccount(
-      accountName,
-      authToken,
-    );
+    const authToken = await this.apiKeyStoreService.retrieveApiKey(userUuid, ApiKeyType.BITWARDEN, secret);
+    return this.transactionsService.getTransactionsForAccount(accountName, authToken);
   }
 
   @Get('accounts')

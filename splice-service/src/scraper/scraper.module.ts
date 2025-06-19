@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
+import { VaultModule } from 'src/vault/vault.module';
 import { ScraperService } from './scraper.service';
 import { DBSStrategy } from './strategies/dbs.strategy';
-import { VaultModule } from 'src/vault/vault.module';
 
 const STRATEGIES = [DBSStrategy] as const;
 

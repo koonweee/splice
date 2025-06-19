@@ -1,15 +1,10 @@
 /**
  * Extracts JWT token from request headers and validates it
  */
-import {
-  CanActivate,
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { Request } from 'express';
+import { type CanActivate, type ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { JwtService } from '@nestjs/jwt';
+import type { Request } from 'express';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -30,7 +25,7 @@ export class AuthGuard implements CanActivate {
       });
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      request['jwt'] = payload;
+      request.jwt = payload;
     } catch {
       throw new UnauthorizedException();
     }

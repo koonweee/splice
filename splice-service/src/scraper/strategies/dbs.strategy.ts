@@ -1,26 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ScrapedData } from '@splice/api';
-import { unlink } from 'fs/promises';
-import { Page } from 'playwright';
+import { unlink } from 'node:fs/promises';
+import { Injectable, type Logger } from '@nestjs/common';
+import type { ScrapedData } from '@splice/api';
+import type { Page } from 'playwright';
 import { CSVLoader } from 'src/scraper/strategies/loaders/csv.loader';
 import { parseDBSCSV } from 'src/scraper/strategies/parsers/dbs-checking-savings-csv.parser';
-import { ScraperStrategy } from 'src/scraper/strategies/types';
+import type { ScraperStrategy } from 'src/scraper/strategies/types';
 
-type AccountSelectorOption = {
+interface AccountSelectorOption {
   text: string;
   value: string;
-};
+}
 
 enum AccountType {
   SAVINGS_OR_CHECKING = 'savings_or_checking',
   CREDIT_CARD = 'credit_card',
 }
 
-type AccountInformation = {
+interface AccountInformation {
   transactions: object[];
   totalBalance: number;
   type: AccountType;
-};
+}
 
 const ENABLE_SCREENSHOTS = false;
 
@@ -47,19 +47,14 @@ export class DBSStrategy implements ScraperStrategy {
     password: string;
   } {
     // DBS secret is a JSON string with username and password
-    const secretJson: { username: string; password: string } =
-      JSON.parse(secret);
+    const secretJson: { username: string; password: string } = JSON.parse(secret);
     return {
       username: secretJson.username,
       password: secretJson.password,
     };
   }
 
-  async scrape(
-    secret: string,
-    page: Page,
-    logger: Logger,
-  ): Promise<ScrapedData> {
+  async scrape(secret: string, page: Page, logger: Logger): Promise<ScrapedData> {
     const { username, password } = this.parseCredentialsFromSecret(secret);
     logger.log('Starting DBS scraping process');
     // Fill username and pin
@@ -98,11 +93,7 @@ export class DBSStrategy implements ScraperStrategy {
     await this.screenshotStep(page, 'after-authentication', logger);
 
     // Navigate to Transaction History page
-    await page
-      .locator('frame[name="user_area"]')
-      .contentFrame()
-      .getByRole('heading', { name: 'My Accounts' })
-      .click();
+    await page.locator('frame[name="user_area"]').contentFrame().getByRole('heading', { name: 'My Accounts' }).click();
     await this.screenshotStep(page, 'after-my-accounts-click', logger);
 
     await page
@@ -174,11 +165,7 @@ export class DBSStrategy implements ScraperStrategy {
       .contentFrame()
       .locator('#account_number_select');
     await accountSelector.selectOption(accountSelectorOption.value);
-    await this.screenshotStep(
-      page,
-      `after-selecting-account-${accountSelectorOption.value}`,
-      logger,
-    );
+    await this.screenshotStep(page, `after-selecting-account-${accountSelectorOption.value}`, logger);
 
     const transactionPeriodInput = page
       .locator('frame[name="user_area"]')
@@ -194,7 +181,7 @@ export class DBSStrategy implements ScraperStrategy {
     try {
       await transactionPeriodInput.waitFor({ state: 'visible', timeout: 2000 }); // Credit cards do not have a transaction period selector, only wait 2 seconds
       accountType = AccountType.SAVINGS_OR_CHECKING;
-    } catch (error) {
+    } catch (_error) {
       logger.log('Transaction period selector not found, assuming credit card');
       accountType = AccountType.CREDIT_CARD;
     }
@@ -213,11 +200,7 @@ export class DBSStrategy implements ScraperStrategy {
       // Wait for the last 3 months option to be visible then click it
       await last3MonthsOption.waitFor({ state: 'visible' });
       await last3MonthsOption.click();
-      await this.screenshotStep(
-        page,
-        'after-filling-transaction-period',
-        logger,
-      );
+      await this.screenshotStep(page, 'after-filling-transaction-period', logger);
     } else {
       // Early return for credit cards, we don't support scraping their transactions yet
       return {
@@ -254,19 +237,19 @@ export class DBSStrategy implements ScraperStrategy {
     const download = await downloadPromise;
 
     // Save the downloaded file to the downloads folder
-    const downloadsPath = process.cwd() + '/downloads';
+    const downloadsPath = `${process.cwd()}/downloads`;
     const fileName = `${accountSelectorOption.text}-${accountType}-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
-    await download.saveAs(downloadsPath + `/${fileName}`);
+    await download.saveAs(`${downloadsPath}/${fileName}`);
 
     logger.log(`Downloaded transactions to ${downloadsPath}/${fileName}`);
 
     // Load the CSV file and parse it
     const csvLoader = new CSVLoader();
-    const csvContent = await csvLoader.load(downloadsPath + `/${fileName}`);
+    const csvContent = await csvLoader.load(`${downloadsPath}/${fileName}`);
     const parsedCSV = parseDBSCSV(csvContent);
 
     // Delete the CSV file
-    await unlink(downloadsPath + `/${fileName}`);
+    await unlink(`${downloadsPath}/${fileName}`);
 
     // Extract total balance from text
     const totalBalance = page
@@ -280,9 +263,7 @@ export class DBSStrategy implements ScraperStrategy {
     logger.log(`Total balance: ${totalBalanceAmount}`);
 
     // Strip non-numeric characters, then parse as float
-    const totalBalanceAsNumber = parseFloat(
-      totalBalanceAmount.replace(/[^0-9.-]+/g, ''),
-    );
+    const totalBalanceAsNumber = parseFloat(totalBalanceAmount.replace(/[^0-9.-]+/g, ''));
     logger.log(`Total balance as number: ${totalBalanceAsNumber}`);
 
     // Return placeholder for now, TODO: parse the CSV file

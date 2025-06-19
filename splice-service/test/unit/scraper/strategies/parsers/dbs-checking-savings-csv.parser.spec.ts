@@ -23,20 +23,11 @@ describe('DBS CSV Parser', () => {
       const input = '03 Mar 2025,ICT, ,238.00,PayNow,Simple Reference,OTHR,';
       const result = parseTransactionLine(input);
 
-      expect(result).toEqual([
-        '03 Mar 2025',
-        'ICT',
-        '',
-        '238.00',
-        'PayNow',
-        'Simple Reference',
-        'OTHR',
-      ]);
+      expect(result).toEqual(['03 Mar 2025', 'ICT', '', '238.00', 'PayNow', 'Simple Reference', 'OTHR']);
     });
 
     it('should handle transaction line with commas in reference fields', () => {
-      const input =
-        '03 Mar 2025,ICT, ,238.00,Incoming PayNow Ref 9938287,From: CHEONG KAR MEI, JEANNIE,OTHR OTHR,';
+      const input = '03 Mar 2025,ICT, ,238.00,Incoming PayNow Ref 9938287,From: CHEONG KAR MEI, JEANNIE,OTHR OTHR,';
       const result = parseTransactionLine(input);
 
       expect(result).toEqual([

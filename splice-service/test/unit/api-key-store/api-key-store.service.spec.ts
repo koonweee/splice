@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
 import { NotFoundException } from '@nestjs/common';
-import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
+import { ConfigService } from '@nestjs/config';
+import { Test, type TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import type { Repository } from 'typeorm';
 import { ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
+import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 
 describe('ApiKeyStoreService', () => {
   let service: ApiKeyStoreService;
@@ -22,14 +22,19 @@ describe('ApiKeyStoreService', () => {
     };
 
     const mockConfigService = {
-      get: jest.fn().mockReturnValue(mockEncryptionKey),
+      get: jest.fn((key: string) => {
+        if (key === 'apiStoreEncryptionKey') {
+          return mockEncryptionKey;
+        }
+        return undefined;
+      }),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApiKeyStoreService,
         {
-          provide: getRepositoryToken(ApiKeyStore),
+          provide: 'ApiKeyStoreRepository',
           useValue: mockRepository,
         },
         {
@@ -40,7 +45,7 @@ describe('ApiKeyStoreService', () => {
     }).compile();
 
     service = module.get<ApiKeyStoreService>(ApiKeyStoreService);
-    repository = module.get(getRepositoryToken(ApiKeyStore));
+    repository = module.get('ApiKeyStoreRepository');
   });
 
   afterEach(() => {
@@ -60,11 +65,7 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(
-        mockUserUuid,
-        mockApiKey,
-        ApiKeyType.BITWARDEN,
-      );
+      const secret = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
 
       expect(repository.create).toHaveBeenCalledWith({
         userUuid: mockUserUuid,
@@ -89,16 +90,8 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret1 = await service.storeApiKey(
-        mockUserUuid,
-        mockApiKey,
-        ApiKeyType.BITWARDEN,
-      );
-      const secret2 = await service.storeApiKey(
-        mockUserUuid,
-        mockApiKey,
-        ApiKeyType.BITWARDEN,
-      );
+      const secret1 = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret2 = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
 
       expect(secret1).not.toBe(secret2);
     });
@@ -118,11 +111,7 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(
-        mockUserUuid,
-        mockApiKey,
-        ApiKeyType.BITWARDEN,
-      );
+      const secret = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
 
       // Get the encrypted data from the create call
       const createCall = repository.create.mock.calls[0][0];
@@ -138,11 +127,7 @@ describe('ApiKeyStoreService', () => {
         updatedAt: new Date(),
       });
 
-      const retrievedApiKey = await service.retrieveApiKey(
-        mockUserUuid,
-        ApiKeyType.BITWARDEN,
-        secret,
-      );
+      const retrievedApiKey = await service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, secret);
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: {
@@ -156,13 +141,9 @@ describe('ApiKeyStoreService', () => {
     it('should throw NotFoundException when API key is not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.retrieveApiKey(
-          mockUserUuid,
-          ApiKeyType.BITWARDEN,
-          'invalid-secret',
-        ),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, 'invalid-secret')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should throw UnauthorizedException for invalid secret', async () => {
@@ -176,11 +157,7 @@ describe('ApiKeyStoreService', () => {
       });
 
       await expect(
-        service.retrieveApiKey(
-          mockUserUuid,
-          ApiKeyType.BITWARDEN,
-          '1234567890abcdef1234567890abcdef12345678',
-        ),
+        service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, '1234567890abcdef1234567890abcdef12345678'),
       ).rejects.toThrow();
     });
   });

@@ -1,5 +1,5 @@
-import { promises as fs } from 'fs';
-import { Loader } from '../types';
+import { promises as fs } from 'node:fs';
+import type { Loader } from '../types';
 
 export class CSVLoader implements Loader {
   async load(filePath: string): Promise<string> {

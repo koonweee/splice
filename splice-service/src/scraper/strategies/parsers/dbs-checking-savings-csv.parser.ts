@@ -1,19 +1,19 @@
-export type DBSTransaction = {
+export interface DBSTransaction {
   date: string;
   reference: string;
   transactionRef1: string;
   transactionRef2: string;
   transactionRef3: string;
   amount: number; // Negative for credit, positive for debit
-};
+}
 
-export type DBSAccountInfo = {
+export interface DBSAccountInfo {
   accountName: string;
   statementDate: string;
   availableBalance: number;
   ledgerBalance: number;
   transactions: DBSTransaction[];
-};
+}
 
 function parseDBSBalance(balanceStr: string): number {
   // Remove currency symbol and any whitespace, then parse as float
@@ -37,17 +37,14 @@ export function parseTransactionLine(line: string): string[] {
   const regex = /,(|(([^,]|(, ))+)),/;
 
   // Proccess one match at a time
-  let currentMatch: string;
+  let _currentMatch: string;
   let remainingLine = `,${rest.join(',')}`;
   const matches: string[] = [];
 
   for (let i = 0; i < 3; i++) {
     const match = remainingLine.match(regex);
     const currentMatch = match[0];
-    const currentMatchWithoutWrappingCommas = currentMatch.substring(
-      1,
-      currentMatch.length - 1,
-    );
+    const currentMatchWithoutWrappingCommas = currentMatch.substring(1, currentMatch.length - 1);
     matches.push(currentMatchWithoutWrappingCommas);
     remainingLine = `,${remainingLine.substring(currentMatch.length)}`;
   }
@@ -58,11 +55,7 @@ export function parseTransactionLine(line: string): string[] {
 function parseDBSTransaction(row: string[]): DBSTransaction {
   const debitStr = row[2].trim();
   const creditStr = row[3].trim();
-  const amount = debitStr
-    ? parseFloat(debitStr)
-    : creditStr
-      ? -parseFloat(creditStr)
-      : 0;
+  const amount = debitStr ? parseFloat(debitStr) : creditStr ? -parseFloat(creditStr) : 0;
 
   return {
     date: row[0],

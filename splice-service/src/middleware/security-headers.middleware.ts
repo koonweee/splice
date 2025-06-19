@@ -1,5 +1,5 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
-import { Request, Response, NextFunction } from 'express';
+import { Injectable, type NestMiddleware } from '@nestjs/common';
+import type { NextFunction, Request, Response } from 'express';
 
 @Injectable()
 export class SecurityHeadersMiddleware implements NestMiddleware {
@@ -8,10 +8,7 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
     // Strict Transport Security: force HTTPS
-    res.setHeader(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains',
-    );
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
     // Prevent iframe embedding
     res.setHeader('X-Frame-Options', 'DENY');
