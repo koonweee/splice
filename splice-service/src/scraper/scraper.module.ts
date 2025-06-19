@@ -14,7 +14,7 @@ const STRATEGIES = [DBSStrategy] as const;
       provide: 'SCRAPER_STRATEGIES',
       useFactory: (...strategies) => strategies,
       inject: [...STRATEGIES],
-    }
+    },
   ],
   exports: [ScraperService],
 })

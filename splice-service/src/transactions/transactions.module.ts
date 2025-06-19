@@ -14,8 +14,8 @@ import { ApiKeyStoreModule } from 'src/api-key-store/api-key-store.module';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret'),
         signOptions: {
-          expiresIn: '60s'
-        }
+          expiresIn: '60s',
+        },
       }),
       inject: [ConfigService],
     }),

@@ -8,7 +8,9 @@ export class VaultService {
   /**
    * Given a Bitwarden access token, create a Bitwarden client
    */
-  private async getBitwardenClient(accessToken: string): Promise<BitwardenClient> {
+  private async getBitwardenClient(
+    accessToken: string,
+  ): Promise<BitwardenClient> {
     const client = new BitwardenClient();
     await client.auth().loginAccessToken(accessToken);
     return client;
@@ -25,7 +27,9 @@ export class VaultService {
       const secret = await client.secrets().get(secretId);
       return secret.value;
     } catch (error) {
-      this.logger.error(`Failed to retrieve secret ${secretId}: ${error.message}`);
+      this.logger.error(
+        `Failed to retrieve secret ${secretId}: ${error.message}`,
+      );
       throw error;
     }
   }

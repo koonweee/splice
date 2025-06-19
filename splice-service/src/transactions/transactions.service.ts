@@ -17,8 +17,14 @@ export class TransactionsService {
    * @param accountName The name of the account to get transactions for
    * @returns Promise containing transactions and account information
    */
-  async getTransactionsForAccount(accountName: string, accessToken: string): Promise<object> {
-    const data = await this.scraperService.scrapeWebsite(accountName, accessToken);
+  async getTransactionsForAccount(
+    accountName: string,
+    accessToken: string,
+  ): Promise<object> {
+    const data = await this.scraperService.scrapeWebsite(
+      accountName,
+      accessToken,
+    );
     return data;
   }
 

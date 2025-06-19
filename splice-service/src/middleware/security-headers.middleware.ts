@@ -8,7 +8,10 @@ export class SecurityHeadersMiddleware implements NestMiddleware {
     res.setHeader('X-Content-Type-Options', 'nosniff');
 
     // Strict Transport Security: force HTTPS
-    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains',
+    );
 
     // Prevent iframe embedding
     res.setHeader('X-Frame-Options', 'DENY');

@@ -1,4 +1,12 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+  Inject,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ScrapedData } from '@splice/api';
 import { Browser, chromium } from 'playwright';
@@ -12,12 +20,13 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
   private readonly scraperStrategies = new Map<string, ScraperStrategy>();
 
   constructor(
-    @Inject('SCRAPER_STRATEGIES') private readonly strategies: ScraperStrategy[],
+    @Inject('SCRAPER_STRATEGIES')
+    private readonly strategies: ScraperStrategy[],
     private readonly configService: ConfigService,
     private readonly vaultService: VaultService,
   ) {
     // Register all strategies
-    strategies.forEach(strategy => {
+    strategies.forEach((strategy) => {
       this.scraperStrategies.set(strategy.name, strategy);
     });
   }
@@ -38,21 +47,35 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async scrapeWebsite(websiteName: string, accessToken: string): Promise<ScrapedData> {
+  async scrapeWebsite(
+    websiteName: string,
+    accessToken: string,
+  ): Promise<ScrapedData> {
     if (!this.browser) {
       this.logger.error('Browser not initialized');
-      throw new HttpException('Browser not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Browser not initialized',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
 
     const strategy = this.scraperStrategies.get(websiteName);
     if (!strategy) {
-      throw new HttpException(`No scraper strategy found for website: ${websiteName}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `No scraper strategy found for website: ${websiteName}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     // Get the secret uuid for the strategy (located in the config at bitwarden.secrets.${websiteName})
-    const secretUuid = this.configService.get<string>(`bitwarden.secrets.${websiteName}`);
+    const secretUuid = this.configService.get<string>(
+      `bitwarden.secrets.${websiteName}`,
+    );
     if (!secretUuid) {
-      throw new HttpException(`No secret uuid found for website: ${websiteName}`, HttpStatus.NOT_FOUND);
+      throw new HttpException(
+        `No secret uuid found for website: ${websiteName}`,
+        HttpStatus.NOT_FOUND,
+      );
     }
 
     this.logger.log(`Retrieving secret for ${websiteName}: ${secretUuid}`);
@@ -69,10 +92,12 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       const data = await strategy.scrape(secret, page, this.logger);
       return data;
     } catch (error) {
-      this.logger.error(`Failed to scrape ${strategy.startUrl}: ${error.message}`);
+      this.logger.error(
+        `Failed to scrape ${strategy.startUrl}: ${error.message}`,
+      );
       throw new HttpException(
         `Failed to scrape ${strategy.startUrl}: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     } finally {
       await page.close();

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +21,9 @@ export class ApiKeyStoreService {
   ) {
     const masterKey = this.configService.get<string>('apiStoreEncryptionKey');
     if (!masterKey) {
-      throw new Error('API_KEY_ENCRYPTION_KEY environment variable must be set');
+      throw new Error(
+        'API_KEY_ENCRYPTION_KEY environment variable must be set',
+      );
     }
     this.masterKey = Buffer.from(masterKey, 'utf8');
   }
@@ -29,11 +35,14 @@ export class ApiKeyStoreService {
       userUuid,
       100000, // iterations
       32, // key length
-      'sha256'
+      'sha256',
     );
   }
 
-  private encrypt(text: string, userUuid: string): { encryptedData: string; secret: string } {
+  private encrypt(
+    text: string,
+    userUuid: string,
+  ): { encryptedData: string; secret: string } {
     const userKey = this.deriveUserKey(userUuid);
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(this.algorithm, userKey, iv);
@@ -47,7 +56,11 @@ export class ApiKeyStoreService {
     return { encryptedData, secret };
   }
 
-  private decrypt(encryptedData: string, secret: string, userUuid: string): string {
+  private decrypt(
+    encryptedData: string,
+    secret: string,
+    userUuid: string,
+  ): string {
     const userKey = this.deriveUserKey(userUuid);
     const secretBuffer = Buffer.from(secret, 'hex');
     const iv = secretBuffer.subarray(0, 16);
@@ -65,7 +78,11 @@ export class ApiKeyStoreService {
     }
   }
 
-  async storeApiKey(userUuid: string, apiKey: string, keyType: ApiKeyType): Promise<string> {
+  async storeApiKey(
+    userUuid: string,
+    apiKey: string,
+    keyType: ApiKeyType,
+  ): Promise<string> {
     const { encryptedData, secret } = this.encrypt(apiKey, userUuid);
 
     const apiKeyStore = this.apiKeyStoreRepository.create({
@@ -78,7 +95,11 @@ export class ApiKeyStoreService {
     return secret;
   }
 
-  async retrieveApiKey(userUuid: string, keyType: ApiKeyType, secret: string): Promise<string> {
+  async retrieveApiKey(
+    userUuid: string,
+    keyType: ApiKeyType,
+    secret: string,
+  ): Promise<string> {
     const storedKey = await this.apiKeyStoreRepository.findOne({
       where: {
         userUuid,
