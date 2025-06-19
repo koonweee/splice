@@ -1,7 +1,7 @@
 import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/common';
 import { ApiKeyType } from '@splice/api';
-import type { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
-import type { TransactionsService } from 'src/transactions/transactions.service';
+import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
+import { TransactionsService } from 'src/transactions/transactions.service';
 @Controller('transactions')
 export class TransactionsController {
   constructor(

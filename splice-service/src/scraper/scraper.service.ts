@@ -7,11 +7,11 @@ import {
   type OnModuleDestroy,
   type OnModuleInit,
 } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+import { ConfigService } from '@nestjs/config';
 import type { ScrapedData } from '@splice/api';
 import { type Browser, chromium } from 'playwright';
-import type { ScraperStrategy } from 'src/scraper/strategies/types';
-import type { VaultService } from 'src/vault/vault.service';
+import { ScraperStrategy } from 'src/scraper/strategies/types';
+import { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class ScraperService implements OnModuleInit, OnModuleDestroy {
