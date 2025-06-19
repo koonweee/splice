@@ -1,9 +1,8 @@
 import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
+import { type ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
 import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 
 describe('ApiKeyStoreService', () => {

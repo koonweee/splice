@@ -1,6 +1,6 @@
 import * as crypto from 'node:crypto';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import type { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { ApiKeyStore, type ApiKeyType } from './api-key-store.entity';
