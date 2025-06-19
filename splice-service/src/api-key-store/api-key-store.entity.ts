@@ -1,5 +1,5 @@
 import { ApiKeyType } from '@splice/api';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
 @Index(['userUuid', 'keyType'], { unique: true })
@@ -26,4 +26,3 @@ export class ApiKeyStore {
   updatedAt: Date;
 }
 export { ApiKeyType };
-

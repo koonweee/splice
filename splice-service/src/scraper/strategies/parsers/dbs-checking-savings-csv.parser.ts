@@ -1,4 +1,4 @@
-export type DBSTransaction = {
+export interface DBSTransaction {
   date: string;
   reference: string;
   transactionRef1: string;
@@ -7,7 +7,7 @@ export type DBSTransaction = {
   amount: number; // Negative for credit, positive for debit
 }
 
-export type DBSAccountInfo = {
+export interface DBSAccountInfo {
   accountName: string;
   statementDate: string;
   availableBalance: number;
@@ -21,7 +21,7 @@ function parseDBSBalance(balanceStr: string): number {
 }
 
 export function parseCSVLine(line: string): string[] {
-  return line.split(',').map(item => item.trim());
+  return line.split(',').map((item) => item.trim());
 }
 
 export function parseTransactionLine(line: string): string[] {
@@ -33,12 +33,11 @@ export function parseTransactionLine(line: string): string[] {
 
   // We expect 3 more fields, but they might have commas in them
 
-
   // Regex to match ',<optional text, possibly containing comma with space but not just comma>,'
-  const regex = /,(|(([^,]|(, ))+)),/
+  const regex = /,(|(([^,]|(, ))+)),/;
 
   // Proccess one match at a time
-  let currentMatch: string;
+  let _currentMatch: string;
   let remainingLine = `,${rest.join(',')}`;
   const matches: string[] = [];
 
@@ -64,14 +63,15 @@ function parseDBSTransaction(row: string[]): DBSTransaction {
     transactionRef1: row[4] || '',
     transactionRef2: row[5] || '',
     transactionRef3: row[6] || '',
-    amount
+    amount,
   };
 }
 
 export function parseDBSCSV(csvContent: string): DBSAccountInfo {
-  const lines = csvContent.split('\n')
-    .map(line => line.trim())
-    .filter(line => line);
+  const lines = csvContent
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line);
 
   // Parse account details from header using the new CSV parser
   const accountNameRow = parseCSVLine(lines[0]);
@@ -85,8 +85,8 @@ export function parseDBSCSV(csvContent: string): DBSAccountInfo {
   const ledgerBalance = parseDBSBalance(ledgerBalanceRow[1]);
 
   // Find the header row for transactions
-  const transactionHeaderIndex = lines.findIndex(line =>
-    line.includes('Transaction Date,Reference,Debit Amount,Credit Amount')
+  const transactionHeaderIndex = lines.findIndex((line) =>
+    line.includes('Transaction Date,Reference,Debit Amount,Credit Amount'),
   );
 
   if (transactionHeaderIndex === -1) {
@@ -96,8 +96,8 @@ export function parseDBSCSV(csvContent: string): DBSAccountInfo {
   // Parse transactions using the new CSV parser
   const transactions = lines
     .slice(transactionHeaderIndex + 1)
-    .filter(line => line && !line.startsWith(','))
-    .map(line => parseDBSTransaction(parseTransactionLine(line)));
+    .filter((line) => line && !line.startsWith(','))
+    .map((line) => parseDBSTransaction(parseTransactionLine(line)));
 
   return {
     accountName,

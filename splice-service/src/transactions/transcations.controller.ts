@@ -1,8 +1,7 @@
-import { Controller, Get, Query, Headers, BadRequestException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/common';
 import { ApiKeyType } from '@splice/api';
-import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
-import { TransactionsService } from 'src/transactions/transactions.service';
+import type { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
+import type { TransactionsService } from 'src/transactions/transactions.service';
 @Controller('transactions')
 export class TransactionsController {
   constructor(
@@ -11,7 +10,11 @@ export class TransactionsController {
   ) {}
 
   @Get('by-account')
-  async getByAccount(@Query('accountName') accountName: string, @Query('userUuid') userUuid: string, @Headers('X-Secret') secret: string) {
+  async getByAccount(
+    @Query('accountName') accountName: string,
+    @Query('userUuid') userUuid: string,
+    @Headers('X-Secret') secret: string,
+  ) {
     if (!secret || !userUuid || !accountName) {
       throw new BadRequestException('Missing required parameters');
     }
@@ -30,7 +33,7 @@ export class TransactionsController {
   // }
 
   @Get('secret')
-  async getSecret(@Query('secretId') secretId: string ) {
+  async getSecret(@Query('secretId') secretId: string) {
     return this.transactionsService.getSecret(secretId);
   }
 }

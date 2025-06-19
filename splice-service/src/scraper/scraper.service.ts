@@ -1,9 +1,17 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger, Inject, HttpException, HttpStatus } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { ScrapedData } from '@splice/api';
-import { Browser, chromium } from 'playwright';
-import { ScraperStrategy } from 'src/scraper/strategies/types';
-import { VaultService } from 'src/vault/vault.service';
+import {
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  Logger,
+  type OnModuleDestroy,
+  type OnModuleInit,
+} from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
+import type { ScrapedData } from '@splice/api';
+import { type Browser, chromium } from 'playwright';
+import type { ScraperStrategy } from 'src/scraper/strategies/types';
+import type { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class ScraperService implements OnModuleInit, OnModuleDestroy {
@@ -12,12 +20,13 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
   private readonly scraperStrategies = new Map<string, ScraperStrategy>();
 
   constructor(
-    @Inject('SCRAPER_STRATEGIES') private readonly strategies: ScraperStrategy[],
+    @Inject('SCRAPER_STRATEGIES')
+    private readonly strategies: ScraperStrategy[],
     private readonly configService: ConfigService,
     private readonly vaultService: VaultService,
   ) {
     // Register all strategies
-    strategies.forEach(strategy => {
+    strategies.forEach((strategy) => {
       this.scraperStrategies.set(strategy.name, strategy);
     });
   }
@@ -72,7 +81,7 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       this.logger.error(`Failed to scrape ${strategy.startUrl}: ${error.message}`);
       throw new HttpException(
         `Failed to scrape ${strategy.startUrl}: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR
+        HttpStatus.INTERNAL_SERVER_ERROR,
       );
     } finally {
       await page.close();

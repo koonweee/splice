@@ -23,15 +23,7 @@ describe('DBS CSV Parser', () => {
 
       const result = parseCSVLine(input);
 
-      expect(result).toEqual([
-        '04 Mar 2025',
-        'NETS',
-        '12.50',
-        '',
-        'NETS Payment',
-        'Shop A',
-        'Purchase',
-      ]);
+      expect(result).toEqual(['04 Mar 2025', 'NETS', '12.50', '', 'NETS Payment', 'Shop A', 'Purchase']);
     });
 
     it('should handle empty fields correctly', () => {
@@ -39,15 +31,7 @@ describe('DBS CSV Parser', () => {
 
       const result = parseCSVLine(input);
 
-      expect(result).toEqual([
-        '05 Mar 2025',
-        'ATM',
-        '100.00',
-        '',
-        '',
-        '',
-        '',
-      ]);
+      expect(result).toEqual(['05 Mar 2025', 'ATM', '100.00', '', '', '', '']);
     });
 
     it('should handle multiple commas in reference fields', () => {

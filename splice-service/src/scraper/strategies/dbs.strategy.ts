@@ -1,12 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ScrapedData } from '@splice/api';
-import { unlink } from 'fs/promises';
-import { Page } from 'playwright';
+import { unlink } from 'node:fs/promises';
+import { Injectable, type Logger } from '@nestjs/common';
+import type { ScrapedData } from '@splice/api';
+import type { Page } from 'playwright';
 import { CSVLoader } from 'src/scraper/strategies/loaders/csv.loader';
 import { parseDBSCSV } from 'src/scraper/strategies/parsers/dbs-checking-savings-csv.parser';
-import { ScraperStrategy } from 'src/scraper/strategies/types';
+import type { ScraperStrategy } from 'src/scraper/strategies/types';
 
-type AccountSelectorOption = {
+interface AccountSelectorOption {
   text: string;
   value: string;
 }
@@ -16,7 +16,7 @@ enum AccountType {
   CREDIT_CARD = 'credit_card',
 }
 
-type AccountInformation = {
+interface AccountInformation {
   transactions: object[];
   totalBalance: number;
   type: AccountType;
@@ -33,19 +33,21 @@ export class DBSStrategy implements ScraperStrategy {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     if (ENABLE_SCREENSHOTS) {
       await page.screenshot({
-          path: `screenshots/${timestamp}-${stepName}.png`,
-          fullPage: true
+        path: `screenshots/${timestamp}-${stepName}.png`,
+        fullPage: true,
       });
       logger.debug(`Screenshot saved: ${stepName}`);
-    }
-    else {
+    } else {
       logger.debug(`Skipping screenshot for ${stepName}`);
     }
   }
 
-  private parseCredentialsFromSecret(secret: string): { username: string, password: string } {
+  private parseCredentialsFromSecret(secret: string): {
+    username: string;
+    password: string;
+  } {
     // DBS secret is a JSON string with username and password
-    const secretJson: { username: string, password: string } = JSON.parse(secret);
+    const secretJson: { username: string; password: string } = JSON.parse(secret);
     return {
       username: secretJson.username,
       password: secretJson.password,
@@ -67,18 +69,25 @@ export class DBSStrategy implements ScraperStrategy {
     await this.screenshotStep(page, 'after-login-click', logger);
 
     // Click authenticate now to begin the authentication process (user should get prompt on mobile app)
-    await page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().getByRole('link', { name: 'Authenticate now' }).click();
+    await page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .getByRole('link', { name: 'Authenticate now' })
+      .click();
     await this.screenshotStep(page, 'after-authenticate-click', logger);
 
     logger.log('Awaiting user authentication in App, waiting up to 5 minutes');
 
     // Prompt process may take up to 5 minutes. Upon success, expect to see the Welcome Back message
-    await page.locator('frame[name="user_area"]')
-        .contentFrame()
-        .locator('iframe[name="iframe1"]')
-        .contentFrame()
-        .getByRole('heading', { name: 'Welcome Back' })
-        .click({ timeout: 300000 }); // 5 minutes = 300000 milliseconds
+    await page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .getByRole('heading', { name: 'Welcome Back' })
+      .click({ timeout: 300000 }); // 5 minutes = 300000 milliseconds
 
     logger.log('Authenticated in App');
     await this.screenshotStep(page, 'after-authentication', logger);
@@ -87,13 +96,22 @@ export class DBSStrategy implements ScraperStrategy {
     await page.locator('frame[name="user_area"]').contentFrame().getByRole('heading', { name: 'My Accounts' }).click();
     await this.screenshotStep(page, 'after-my-accounts-click', logger);
 
-    await page.locator('frame[name="user_area"]').contentFrame().getByRole('link', { name: 'View Transaction History' }).click();
+    await page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .getByRole('link', { name: 'View Transaction History' })
+      .click();
     await this.screenshotStep(page, 'after-transaction-history-click', logger);
 
     logger.log('Navigated to Transaction History page');
 
     // Extract all account details from the account selector
-    const accountSelector = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().locator('#account_number_select');
+    const accountSelector = page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .locator('#account_number_select');
 
     // Wait for the selector to be visible
     logger.log('Waiting for account selector to be visible');
@@ -108,17 +126,22 @@ export class DBSStrategy implements ScraperStrategy {
         const text = await option.textContent();
         const optionValue = await option.getAttribute('value');
         return { text: text.trim(), value: optionValue };
-      })
+      }),
     );
 
     // Filter out the "Please select" option
-    const filteredAccounts = accountSelectorOptions.filter(account => account && !account.text.includes('Please select'));
+    const filteredAccounts = accountSelectorOptions.filter(
+      (account) => account && !account.text.includes('Please select'),
+    );
     logger.log('Found accounts:', filteredAccounts);
 
-    const accountInformation: Record<string, {
-      transactions: object[];
-      totalBalance: number;
-    }> = {};
+    const accountInformation: Record<
+      string,
+      {
+        transactions: object[];
+        totalBalance: number;
+      }
+    > = {};
 
     // Process accounts sequentially instead of in parallel
     for (const account of filteredAccounts) {
@@ -130,12 +153,26 @@ export class DBSStrategy implements ScraperStrategy {
     return accountInformation;
   }
 
-  private async getAccountInformation(page: Page, accountSelectorOption: AccountSelectorOption, logger: Logger): Promise<AccountInformation> {
-    const accountSelector = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().locator('#account_number_select');
+  private async getAccountInformation(
+    page: Page,
+    accountSelectorOption: AccountSelectorOption,
+    logger: Logger,
+  ): Promise<AccountInformation> {
+    const accountSelector = page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .locator('#account_number_select');
     await accountSelector.selectOption(accountSelectorOption.value);
     await this.screenshotStep(page, `after-selecting-account-${accountSelectorOption.value}`, logger);
 
-    const transactionPeriodInput = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().locator('#selectRange')
+    const transactionPeriodInput = page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .locator('#selectRange');
     /**
      * Wait for the transaction period selector to be visible. Use this to determine if we are scraping a savings/checking or credit card account, since the transaction period selector is not present for credit cards.
      * If the transaction period selector is not visible, we are scraping a credit card account.
@@ -144,7 +181,7 @@ export class DBSStrategy implements ScraperStrategy {
     try {
       await transactionPeriodInput.waitFor({ state: 'visible', timeout: 2000 }); // Credit cards do not have a transaction period selector, only wait 2 seconds
       accountType = AccountType.SAVINGS_OR_CHECKING;
-    } catch (error) {
+    } catch (_error) {
       logger.log('Transaction period selector not found, assuming credit card');
       accountType = AccountType.CREDIT_CARD;
     }
@@ -153,7 +190,13 @@ export class DBSStrategy implements ScraperStrategy {
       // Click the transaction period selector to open the dropdown
       await transactionPeriodInput.click();
       // Select the last 3 months option
-      const last3MonthsOption = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().getByRole('listitem').filter({ hasText: 'Last 3 Months' })
+      const last3MonthsOption = page
+        .locator('frame[name="user_area"]')
+        .contentFrame()
+        .locator('iframe[name="iframe1"]')
+        .contentFrame()
+        .getByRole('listitem')
+        .filter({ hasText: 'Last 3 Months' });
       // Wait for the last 3 months option to be visible then click it
       await last3MonthsOption.waitFor({ state: 'visible' });
       await last3MonthsOption.click();
@@ -168,11 +211,22 @@ export class DBSStrategy implements ScraperStrategy {
     }
 
     // Click the "Go" button to load the transactions
-    await page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().getByRole('button', { name: 'Go' }).click();
+    await page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .getByRole('button', { name: 'Go' })
+      .click();
     await this.screenshotStep(page, 'after-go-button-click', logger);
 
     // Wait for the Download button to be visible
-    const downloadButton = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().getByRole('link', { name: 'Download' })
+    const downloadButton = page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .getByRole('link', { name: 'Download' });
     await downloadButton.waitFor({ state: 'visible' });
     await this.screenshotStep(page, 'download-button-visible', logger);
 
@@ -183,22 +237,27 @@ export class DBSStrategy implements ScraperStrategy {
     const download = await downloadPromise;
 
     // Save the downloaded file to the downloads folder
-    const downloadsPath = process.cwd() + '/downloads';
+    const downloadsPath = `${process.cwd()}/downloads`;
     const fileName = `${accountSelectorOption.text}-${accountType}-${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
-    await download.saveAs(downloadsPath + `/${fileName}`);
+    await download.saveAs(`${downloadsPath}/${fileName}`);
 
     logger.log(`Downloaded transactions to ${downloadsPath}/${fileName}`);
 
     // Load the CSV file and parse it
     const csvLoader = new CSVLoader();
-    const csvContent = await csvLoader.load(downloadsPath + `/${fileName}`);
+    const csvContent = await csvLoader.load(`${downloadsPath}/${fileName}`);
     const parsedCSV = parseDBSCSV(csvContent);
 
     // Delete the CSV file
-    await unlink(downloadsPath + `/${fileName}`);
+    await unlink(`${downloadsPath}/${fileName}`);
 
     // Extract total balance from text
-    const totalBalance = page.locator('frame[name="user_area"]').contentFrame().locator('iframe[name="iframe1"]').contentFrame().getByText('Total Balance:')
+    const totalBalance = page
+      .locator('frame[name="user_area"]')
+      .contentFrame()
+      .locator('iframe[name="iframe1"]')
+      .contentFrame()
+      .getByText('Total Balance:');
     const totalBalanceText = await totalBalance.textContent();
     const totalBalanceAmount = totalBalanceText.split(' ')[1];
     logger.log(`Total balance: ${totalBalanceAmount}`);

@@ -1,9 +1,9 @@
+import * as crypto from 'node:crypto';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import * as crypto from 'crypto';
-import { ApiKeyStore, ApiKeyType } from './api-key-store.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import type { Repository } from 'typeorm';
+import { ApiKeyStore, type ApiKeyType } from './api-key-store.entity';
 
 @Injectable()
 export class ApiKeyStoreService {
@@ -29,7 +29,7 @@ export class ApiKeyStoreService {
       userUuid,
       100000, // iterations
       32, // key length
-      'sha256'
+      'sha256',
     );
   }
 
@@ -60,7 +60,7 @@ export class ApiKeyStoreService {
       let decryptedData = decipher.update(encryptedData, 'hex', 'utf8');
       decryptedData += decipher.final('utf8');
       return decryptedData;
-    } catch (error) {
+    } catch (_error) {
       throw new UnauthorizedException('Invalid secret or tampering detected');
     }
   }

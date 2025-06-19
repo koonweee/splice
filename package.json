@@ -1,0 +1,32 @@
+{
+  "name": "splice-monorepo",
+  "private": true,
+  "workspaces": [
+    "splice-api",
+    "splice-service"
+  ],
+  "scripts": {
+    "dev": "bun run --filter splice-service dev",
+    "build": "bun run --filter '*' build",
+    "test": "bun run --filter '*' test",
+    "test:watch": "bun run --filter '*' test:watch",
+    "test:cov": "bun run --filter '*' test:cov",
+    "lint": "bun run --filter '*' lint",
+    "format": "bun run --filter '*' format",
+    "db": "bun run --filter splice-service db",
+    "test:e2e": "bun run --filter splice-service test:e2e",
+    "claude:usage": "bunx ccusage",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.0",
+    "@types/bun": "^1.1.17",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.10.6",
+    "husky": "^9.1.7",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}

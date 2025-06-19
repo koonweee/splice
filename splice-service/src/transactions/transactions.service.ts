@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AccountTransactionsResponse, GetAccountsResponse } from '@splice/api';
-import { ScraperService } from 'src/scraper/scraper.service';
-import { VaultService } from 'src/vault/vault.service';
+import type { ConfigService } from '@nestjs/config';
+import type { GetAccountsResponse } from '@splice/api';
+import type { ScraperService } from 'src/scraper/scraper.service';
+import type { VaultService } from 'src/vault/vault.service';
 
 @Injectable()
 export class TransactionsService {
