@@ -1,8 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { type ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
+import { ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
 import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 
 describe('ApiKeyStoreService', () => {
@@ -33,7 +34,7 @@ describe('ApiKeyStoreService', () => {
       providers: [
         ApiKeyStoreService,
         {
-          provide: 'ApiKeyStoreRepository',
+          provide: getRepositoryToken(ApiKeyStore),
           useValue: mockRepository,
         },
         {
@@ -44,7 +45,7 @@ describe('ApiKeyStoreService', () => {
     }).compile();
 
     service = module.get<ApiKeyStoreService>(ApiKeyStoreService);
-    repository = module.get('ApiKeyStoreRepository');
+    repository = module.get(getRepositoryToken(ApiKeyStore));
   });
 
   afterEach(() => {

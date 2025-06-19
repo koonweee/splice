@@ -1,6 +1,7 @@
 import * as crypto from 'node:crypto';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
+// biome-ignore lint/style/useImportType: Cannot use 'import type' - NestJS DI needs the runtime reference
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { ApiKeyStore, type ApiKeyType } from './api-key-store.entity';
