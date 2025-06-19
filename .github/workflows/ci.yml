@@ -18,7 +18,7 @@ jobs:
   build-and-test-splice-api:
     name: Build and Test splice-api
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         working-directory: ./splice-api
@@ -46,8 +46,7 @@ jobs:
   build-and-test-splice-service:
     name: Build and Test splice-service
     runs-on: ubuntu-latest
-    needs: build-and-test-splice-api
-    
+
     defaults:
       run:
         working-directory: ./splice-service
