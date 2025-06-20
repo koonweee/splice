@@ -14,6 +14,7 @@ Smart commit workflow that automatically handles branching, commits, and PRs.
 2. **Smart branching**:
    - **Always create branch FROM main/master if on main/master** (never commit directly to main)
    - **Always create new branches FROM main** regardless of current branch for unrelated changes
+   - **Always pull latest main before creating new branches**: Run `git pull` when switching to main to ensure up-to-date base
    - **Score current branch relevance** (0-100) against detected change types:
      - Tests (`*test*`, `*spec*`) → test-related branches
      - Docs (`*.md`, README) → docs branches  
