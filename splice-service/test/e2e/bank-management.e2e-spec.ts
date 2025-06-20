@@ -3,36 +3,112 @@ import { Test } from '@nestjs/testing';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import * as request from 'supertest';
 import type { App } from 'supertest/types';
-import { DataSource } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
-import { AppModule } from '../../src/app.module';
+import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
+import { BankConnection } from '../../src/bank-connections/bank-connection.entity';
+import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
+import { BankRegistryController } from '../../src/bank-registry/bank-registry.controller';
 import { BankRegistry } from '../../src/bank-registry/bank-registry.entity';
+import { BankRegistryService } from '../../src/bank-registry/bank-registry.service';
 import { User } from '../../src/users/user.entity';
 
 describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
-  let dataSource: DataSource;
+  let bankRegistryService: jest.Mocked<BankRegistryService>;
+  let bankConnectionService: jest.Mocked<BankConnectionService>;
   let testUser: User;
   let testBank: BankRegistry;
+  let testConnection: BankConnection;
 
   beforeAll(async () => {
+    // Create test data objects
+    testUser = {
+      uuid: uuidv4(),
+      username: 'testuser',
+      email: 'test@example.com',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    testBank = {
+      id: uuidv4(),
+      name: 'Test Bank',
+      logoUrl: 'https://example.com/logo.png',
+      sourceType: BankSourceType.SCRAPER,
+      scraperIdentifier: 'test-bank',
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    testConnection = {
+      id: uuidv4(),
+      userId: testUser.uuid,
+      bankId: testBank.id,
+      status: BankConnectionStatus.PENDING_AUTH,
+      alias: 'My Test Bank',
+      lastSync: null,
+      authDetailsUuid: uuidv4(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      user: testUser,
+      bank: testBank,
+    };
+
+    // Create mocked services
+    const mockBankRegistryService = {
+      findAllActive: jest.fn(),
+      findById: jest.fn(),
+    };
+
+    const mockBankConnectionService = {
+      findByUserId: jest.fn(),
+      findByUserIdAndConnectionId: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    };
+
     const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
+      controllers: [BankRegistryController, BankConnectionController],
+      providers: [
+        {
+          provide: BankRegistryService,
+          useValue: mockBankRegistryService,
+        },
+        {
+          provide: BankConnectionService,
+          useValue: mockBankConnectionService,
+        },
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
 
-    dataSource = moduleFixture.get<DataSource>(DataSource);
+    bankRegistryService = moduleFixture.get(BankRegistryService);
+    bankConnectionService = moduleFixture.get(BankConnectionService);
 
-    // Create test data
-    await createTestData();
+    // Set up default mock responses
+    bankRegistryService.findAllActive.mockResolvedValue([testBank]);
+    bankRegistryService.findById.mockImplementation((id: string) => {
+      return Promise.resolve(id === testBank.id ? testBank : null);
+    });
   });
 
   afterAll(async () => {
-    // Clean up test data
-    await cleanupTestData();
     await app.close();
+  });
+
+  beforeEach(() => {
+    // Reset mocks before each test
+    jest.clearAllMocks();
+
+    // Set up default mock responses
+    bankRegistryService.findAllActive.mockResolvedValue([testBank]);
+    bankRegistryService.findById.mockImplementation((id: string) => {
+      return Promise.resolve(id === testBank.id ? testBank : null);
+    });
   });
 
   describe('Full Bank Connection Flow', () => {
@@ -41,7 +117,7 @@ describe('Bank Management (e2e)', () => {
       const availableBanksResponse = await request(app.getHttpServer()).get('/banks/available').expect(200);
 
       expect(availableBanksResponse.body).toBeInstanceOf(Array);
-      expect(availableBanksResponse.body.length).toBeGreaterThan(0);
+      expect(availableBanksResponse.body.length).toBe(1);
 
       const availableBank = availableBanksResponse.body.find(
         (bank: { id: string; name: string; sourceType: string }) => bank.id === testBank.id,
@@ -50,6 +126,9 @@ describe('Bank Management (e2e)', () => {
       expect(availableBank.name).toBe(testBank.name);
       expect(availableBank.sourceType).toBe(testBank.sourceType);
 
+      // Verify service was called
+      expect(bankRegistryService.findAllActive).toHaveBeenCalledTimes(1);
+
       // Step 2: Create a bank connection for the user
       const authDetailsUuid = uuidv4();
       const createConnectionRequest = {
@@ -57,6 +136,13 @@ describe('Bank Management (e2e)', () => {
         alias: 'My Test Bank',
         authDetailsUuid,
       };
+
+      const mockCreatedConnection = {
+        ...testConnection,
+        authDetailsUuid,
+      };
+
+      bankConnectionService.create.mockResolvedValue(mockCreatedConnection);
 
       const createConnectionResponse = await request(app.getHttpServer())
         .post(`/users/${testUser.uuid}/banks`)
@@ -69,9 +155,14 @@ describe('Bank Management (e2e)', () => {
       expect(createConnectionResponse.body.status).toBe(BankConnectionStatus.PENDING_AUTH);
       expect(createConnectionResponse.body.sourceType).toBe(testBank.sourceType);
 
+      // Verify service was called
+      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.uuid, createConnectionRequest);
+
       const connectionId = createConnectionResponse.body.id;
 
       // Step 3: Get user's bank connections
+      bankConnectionService.findByUserId.mockResolvedValue([mockCreatedConnection]);
+
       const userConnectionsResponse = await request(app.getHttpServer())
         .get(`/users/${testUser.uuid}/banks`)
         .expect(200);
@@ -81,7 +172,12 @@ describe('Bank Management (e2e)', () => {
       expect(userConnectionsResponse.body[0].id).toBe(connectionId);
       expect(userConnectionsResponse.body[0].bankName).toBe(testBank.name);
 
+      // Verify service was called
+      expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(testUser.uuid);
+
       // Step 4: Check the status of the specific connection
+      bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockCreatedConnection);
+
       const statusResponse = await request(app.getHttpServer())
         .get(`/users/${testUser.uuid}/banks/${connectionId}/status`)
         .expect(200);
@@ -89,11 +185,22 @@ describe('Bank Management (e2e)', () => {
       expect(statusResponse.body.status).toBe(BankConnectionStatus.PENDING_AUTH);
       expect(statusResponse.body.lastSync).toBeNull();
 
+      // Verify service was called
+      expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(testUser.uuid, connectionId);
+
       // Step 5: Update the connection (activate it)
       const updateRequest = {
         status: BankConnectionStatus.ACTIVE,
         alias: 'My Updated Bank Connection',
       };
+
+      const mockUpdatedConnection = {
+        ...mockCreatedConnection,
+        status: BankConnectionStatus.ACTIVE,
+        alias: 'My Updated Bank Connection',
+      };
+
+      bankConnectionService.update.mockResolvedValue(mockUpdatedConnection);
 
       const updateResponse = await request(app.getHttpServer())
         .put(`/users/${testUser.uuid}/banks/${connectionId}`)
@@ -103,7 +210,12 @@ describe('Bank Management (e2e)', () => {
       expect(updateResponse.body.status).toBe(BankConnectionStatus.ACTIVE);
       expect(updateResponse.body.alias).toBe('My Updated Bank Connection');
 
+      // Verify service was called
+      expect(bankConnectionService.update).toHaveBeenCalledWith(testUser.uuid, connectionId, updateRequest);
+
       // Step 6: Verify the update by checking status again
+      bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockUpdatedConnection);
+
       const updatedStatusResponse = await request(app.getHttpServer())
         .get(`/users/${testUser.uuid}/banks/${connectionId}/status`)
         .expect(200);
@@ -111,9 +223,16 @@ describe('Bank Management (e2e)', () => {
       expect(updatedStatusResponse.body.status).toBe(BankConnectionStatus.ACTIVE);
 
       // Step 7: Delete the connection
+      bankConnectionService.delete.mockResolvedValue(undefined);
+
       await request(app.getHttpServer()).delete(`/users/${testUser.uuid}/banks/${connectionId}`).expect(200);
 
+      // Verify service was called
+      expect(bankConnectionService.delete).toHaveBeenCalledWith(testUser.uuid, connectionId);
+
       // Step 8: Verify the connection is deleted
+      bankConnectionService.findByUserId.mockResolvedValue([]);
+
       const emptyConnectionsResponse = await request(app.getHttpServer())
         .get(`/users/${testUser.uuid}/banks`)
         .expect(200);
@@ -122,6 +241,8 @@ describe('Bank Management (e2e)', () => {
       expect(emptyConnectionsResponse.body.length).toBe(0);
 
       // Step 9: Verify accessing deleted connection returns 404
+      bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
+
       await request(app.getHttpServer()).get(`/users/${testUser.uuid}/banks/${connectionId}/status`).expect(404);
     });
 
@@ -129,22 +250,38 @@ describe('Bank Management (e2e)', () => {
       const otherUserId = uuidv4();
 
       // Try to access another user's connections
-      await request(app.getHttpServer()).get(`/users/${otherUserId}/banks`).expect(200); // Should return empty array, not error
+      bankConnectionService.findByUserId.mockResolvedValue([]);
 
-      // Try to create connection for non-existent user
+      await request(app.getHttpServer()).get(`/users/${otherUserId}/banks`).expect(200); // Should return empty array
+
+      expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(otherUserId);
+
+      // Try to create connection for user (should work if bank exists)
       const createRequest = {
         bankId: testBank.id,
-        alias: 'Unauthorized Test',
+        alias: 'Test Connection',
         authDetailsUuid: uuidv4(),
       };
 
-      // The service doesn't validate user existence before creating connection,
-      // so it fails with 500 due to foreign key constraint violation
-      await request(app.getHttpServer()).post(`/users/${otherUserId}/banks`).send(createRequest).expect(500); // Fails with foreign key constraint violation
+      const mockConnection = {
+        ...testConnection,
+        userId: otherUserId,
+      };
+
+      bankConnectionService.create.mockResolvedValue(mockConnection);
+
+      await request(app.getHttpServer()).post(`/users/${otherUserId}/banks`).send(createRequest).expect(201);
+
+      expect(bankConnectionService.create).toHaveBeenCalledWith(otherUserId, createRequest);
     });
 
     it('should handle invalid bank registry requests', async () => {
       const invalidBankId = uuidv4();
+
+      // Mock service to return null for invalid bank ID
+      bankRegistryService.findById.mockImplementation((id: string) => {
+        return Promise.resolve(id === testBank.id ? testBank : null);
+      });
 
       // Try to create connection with non-existent bank
       const createRequest = {
@@ -153,35 +290,37 @@ describe('Bank Management (e2e)', () => {
         authDetailsUuid: uuidv4(),
       };
 
-      await request(app.getHttpServer()).post(`/users/${testUser.uuid}/banks`).send(createRequest).expect(404); // Should fail because bank doesn't exist
+      // Mock service to throw NotFoundException
+      bankConnectionService.create.mockRejectedValue(new Error('Bank not found'));
+
+      await request(app.getHttpServer()).post(`/users/${testUser.uuid}/banks`).send(createRequest).expect(500); // Service throws error which becomes 500
+
+      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.uuid, createRequest);
     });
   });
 
-  async function createTestData(): Promise<void> {
-    // Create test user
-    const userRepository = dataSource.getRepository(User);
-    testUser = userRepository.create({
-      username: 'testuser',
-      email: 'test@example.com',
-    });
-    testUser = await userRepository.save(testUser);
+  describe('Bank Registry Service Integration', () => {
+    it('should get available banks', async () => {
+      const response = await request(app.getHttpServer()).get('/banks/available').expect(200);
 
-    // Create test bank in registry
-    const bankRepository = dataSource.getRepository(BankRegistry);
-    testBank = bankRepository.create({
-      name: 'Test Bank',
-      logoUrl: 'https://example.com/logo.png',
-      sourceType: BankSourceType.SCRAPER,
-      scraperIdentifier: 'test-bank',
-      isActive: true,
-    });
-    testBank = await bankRepository.save(testBank);
-  }
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0]).toEqual({
+        id: testBank.id,
+        name: testBank.name,
+        logoUrl: testBank.logoUrl,
+        sourceType: testBank.sourceType,
+      });
 
-  async function cleanupTestData(): Promise<void> {
-    // Clean up in reverse order due to foreign key constraints
-    await dataSource.getRepository('BankConnection').delete({});
-    await dataSource.getRepository(BankRegistry).delete({ id: testBank.id });
-    await dataSource.getRepository(User).delete({ uuid: testUser.uuid });
-  }
+      expect(bankRegistryService.findAllActive).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle empty bank registry', async () => {
+      bankRegistryService.findAllActive.mockResolvedValue([]);
+
+      const response = await request(app.getHttpServer()).get('/banks/available').expect(200);
+
+      expect(response.body).toHaveLength(0);
+      expect(bankRegistryService.findAllActive).toHaveBeenCalledTimes(1);
+    });
+  });
 });

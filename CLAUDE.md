@@ -10,10 +10,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd splice-api && bun run build` - Build shared types package
 
 ### Testing and Quality
-- `cd splice-service && bun run test` - Run unit tests (22 tests in `/test/unit/`)
+- `cd splice-service && bun run test` - Run all tests (unit + E2E) 
+- `cd splice-service && bun run test:unit` - Run unit tests only
+- `cd splice-service && bun run test:e2e` - Run E2E tests only
 - `cd splice-service && bun run test:watch` - Run tests in watch mode
 - `cd splice-service && bun run test:cov` - Run tests with coverage report
-- `cd splice-service && bun run test:e2e` - Run end-to-end tests
 - `cd splice-service && bun run lint` - Run ESLint with auto-fix
 - `cd splice-service && bun run format` - Format code with Prettier
 
