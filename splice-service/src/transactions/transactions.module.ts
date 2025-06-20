@@ -5,7 +5,6 @@ import { ApiKeyStoreModule } from 'src/api-key-store/api-key-store.module';
 import { ScraperModule } from 'src/scraper/scraper.module';
 import { TransactionsController } from 'src/transactions/transcations.controller';
 import { VaultModule } from 'src/vault/vault.module';
-import { AuthGuard } from '../auth/auth.guard';
 import { TransactionsService } from './transactions.service';
 @Module({
   controllers: [TransactionsController],
@@ -25,7 +24,7 @@ import { TransactionsService } from './transactions.service';
     ScraperModule,
     ApiKeyStoreModule,
   ],
-  providers: [TransactionsService, AuthGuard],
+  providers: [TransactionsService],
   exports: [TransactionsService],
 })
-export class TransactionsModule {}
+export class TransactionsModule { }

@@ -1,4 +1,4 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
@@ -13,12 +13,6 @@ describe('BankConnectionController', () => {
   const mockUserId = 'test-user-id';
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
-
-  const mockAuthenticatedRequest = {
-    jwt: {
-      sub: mockUserId,
-    },
-  } as any;
 
   const mockBank: BankRegistry = {
     id: mockBankId,
@@ -63,8 +57,6 @@ describe('BankConnectionController', () => {
         },
       ],
     })
-      .overrideGuard(require('../../../src/auth/auth.guard').AuthGuard)
-      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<BankConnectionController>(BankConnectionController);
@@ -80,7 +72,7 @@ describe('BankConnectionController', () => {
       const connections = [mockBankConnection];
       bankConnectionService.findByUserId.mockResolvedValue(connections);
 
-      const result = await controller.getUserBankConnections(mockUserId, mockAuthenticatedRequest);
+      const result = await controller.getUserBankConnections(mockUserId);
 
       expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual([
@@ -98,14 +90,6 @@ describe('BankConnectionController', () => {
         },
       ]);
     });
-
-    it("should throw ForbiddenException when user tries to access another user's connections", async () => {
-      const differentUserId = 'different-user-id';
-
-      await expect(controller.getUserBankConnections(differentUserId, mockAuthenticatedRequest)).rejects.toThrow(
-        ForbiddenException,
-      );
-    });
   });
 
   describe('createBankConnection', () => {
@@ -118,7 +102,7 @@ describe('BankConnectionController', () => {
     it('should create bank connection successfully', async () => {
       bankConnectionService.create.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.createBankConnection(mockUserId, createRequest, mockAuthenticatedRequest);
+      const result = await controller.createBankConnection(mockUserId, createRequest);
 
       expect(bankConnectionService.create).toHaveBeenCalledWith(mockUserId, createRequest);
       expect(result).toEqual({
@@ -133,14 +117,6 @@ describe('BankConnectionController', () => {
         createdAt: mockBankConnection.createdAt,
         updatedAt: mockBankConnection.updatedAt,
       });
-    });
-
-    it('should throw ForbiddenException when user tries to create connection for another user', async () => {
-      const differentUserId = 'different-user-id';
-
-      await expect(
-        controller.createBankConnection(differentUserId, createRequest, mockAuthenticatedRequest),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -158,19 +134,10 @@ describe('BankConnectionController', () => {
         mockUserId,
         mockConnectionId,
         updateRequest,
-        mockAuthenticatedRequest,
       );
 
       expect(bankConnectionService.update).toHaveBeenCalledWith(mockUserId, mockConnectionId, updateRequest);
       expect(result.alias).toBe('Updated Alias');
-    });
-
-    it("should throw ForbiddenException when user tries to update another user's connection", async () => {
-      const differentUserId = 'different-user-id';
-
-      await expect(
-        controller.updateBankConnection(differentUserId, mockConnectionId, updateRequest, mockAuthenticatedRequest),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -178,17 +145,9 @@ describe('BankConnectionController', () => {
     it('should delete bank connection successfully', async () => {
       bankConnectionService.delete.mockResolvedValue();
 
-      await controller.deleteBankConnection(mockUserId, mockConnectionId, mockAuthenticatedRequest);
+      await controller.deleteBankConnection(mockUserId, mockConnectionId);
 
       expect(bankConnectionService.delete).toHaveBeenCalledWith(mockUserId, mockConnectionId);
-    });
-
-    it("should throw ForbiddenException when user tries to delete another user's connection", async () => {
-      const differentUserId = 'different-user-id';
-
-      await expect(
-        controller.deleteBankConnection(differentUserId, mockConnectionId, mockAuthenticatedRequest),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -196,7 +155,7 @@ describe('BankConnectionController', () => {
     it('should return connection status', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.getBankConnectionStatus(mockUserId, mockConnectionId, mockAuthenticatedRequest);
+      const result = await controller.getBankConnectionStatus(mockUserId, mockConnectionId);
 
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(mockUserId, mockConnectionId);
       expect(result).toEqual({
@@ -209,16 +168,8 @@ describe('BankConnectionController', () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
       await expect(
-        controller.getBankConnectionStatus(mockUserId, mockConnectionId, mockAuthenticatedRequest),
+        controller.getBankConnectionStatus(mockUserId, mockConnectionId),
       ).rejects.toThrow(NotFoundException);
-    });
-
-    it("should throw ForbiddenException when user tries to access another user's connection status", async () => {
-      const differentUserId = 'different-user-id';
-
-      await expect(
-        controller.getBankConnectionStatus(differentUserId, mockConnectionId, mockAuthenticatedRequest),
-      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
