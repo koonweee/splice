@@ -38,8 +38,18 @@ Analyze the current git changes and create sensible commits based on the followi
    - If on main/master and "new" not specified: Create a feature branch first, then push commits
    - If on a feature branch: Push commits to the existing branch
    - Check if a PR exists for the current branch
-   - If no PR exists and we're on a feature branch, offer to create one using `gh pr create`
+   - If no PR exists and we're on a feature branch, automatically create one using `gh pr create`
+   - After creating the PR, automatically open it in the browser using `open [PR_URL]`
 
 7. **Execute the plan**: Actually run the git commands to stage, commit, and push the changes
+
+8. **Automatic PR workflow**:
+   - After successful commit and push, if on a feature branch, automatically create a PR
+   - Use conventional commit message format for PR title
+   - Generate a comprehensive PR description with:
+     - Summary of changes (bullet points)
+     - Test plan checklist
+     - Generated with Claude Code footer
+   - Open the created PR in the default browser automatically
 
 Before proceeding, show me the current git status and ask for confirmation of the commit strategy.
