@@ -1,45 +1,35 @@
-Analyze the current git changes and create sensible commits based on the following workflow:
+Smart commit workflow that automatically handles branching, commits, and PRs.
 
-**Arguments**: 
-- `$ARGUMENTS` can contain "new" to force creation of a new feature branch
+## Workflow
 
-1. **Handle branch creation**:
-   - If `$ARGUMENTS` contains "new": Switch to default branch (main/master) and create a new feature branch
-   - Name the branch appropriately based on the changes (e.g., "add-tests", "fix-auth", "update-docs", "refactor-scraper")
-   - Use kebab-case and be descriptive but concise
+1. **Analyze changes**: Check `git status` and `git diff` to understand file changes and content
 
-2. **Analyze changed files**: Use `git status` and `git diff --name-only` to see what files have been modified
+2. **Smart branching**:
+   - **Always create branch if on main/master** (never commit directly to main)
+   - **Score current branch relevance** (0-100) against detected change types:
+     - Tests (`*test*`, `*spec*`) → test-related branches
+     - Docs (`*.md`, README) → docs branches  
+     - Config (`*.yml`, `package.json`, `.env`) → config/ci branches
+     - Features (new files, major additions) → feat branches
+     - Bug fixes (targeted changes) → fix branches
+   - **Auto-create new branch** if relevance < 50
+   - **Ask user preference** if relevance 50-89 (ambiguous match)
+   - **Stay on current branch** if relevance 90+ (good match)
 
-3. **Check branch relevance**: Determine if the current branch name is relevant to the changes:
-   - Compare the branch name with the types of changes being made
-   - Consider common branch naming patterns (feature/, fix/, docs/, test/, chore/)
-   - Look for keywords in branch name that match the change types (e.g., "test" for test files, "docs" for documentation, "api" for API changes)
-   - If the branch name doesn't match the changes (e.g., on "add-unit-tests" but making UI changes), suggest creating a new appropriate branch
-   - If on main/master, always suggest creating a feature branch unless it's a hotfix
-   - Examples of mismatched branches:
-     - Branch "fix-auth" but changes are in test files → suggest "test-auth" or "add-auth-tests"
-     - Branch "add-docs" but changes are in service code → suggest "feature-service-updates"
-     - Branch "update-deps" but changes are feature additions → suggest "add-new-feature"
+3. **Auto-generate branch names**:
+   - Use kebab-case based on dominant change type
+   - Examples: `test-auth-validation`, `fix-login-bug`, `feat-user-dashboard`, `docs-api-update`
 
-4. **Group changes logically**: Categorize files by type and purpose:
-   - Configuration files (*.json, *.yaml, *.env, package.json, tsconfig.json)
-   - Test files (*test*, *spec*)
-   - Documentation (*.md, README, CHANGELOG)
-   - Source code (*.ts, *.js, *.tsx, *.jsx, *.py)
-   - Styles (*.css, *.scss, *.sass)
-   - Other files
+4. **User input required only for**:
+   - Ambiguous branch relevance (50-89 score)
+   - Mixed change types spanning multiple areas
+   - Branch name conflicts (generated name already exists)
+   - Unclear change intent (large refactoring without clear pattern)
 
-5. **Create appropriate commits**: 
-   - Suggest grouping related changes into separate commits
-   - Use conventional commit format (feat:, fix:, docs:, test:, chore:, etc.)
-   - Ask for commit messages that describe the "why" not just the "what"
+5. **Execute automatically**:
+   - Stage and commit with conventional format (feat:, fix:, docs:, test:, chore:)
+   - Push to remote with tracking
+   - Auto-create PR with `gh pr create` (comprehensive description + test plan)
+   - Auto-open PR in browser with `open [PR_URL]`
 
-6. **Handle branching and PRs**:
-   - If on main/master and "new" not specified: Create a feature branch first, then push commits
-   - If on a feature branch: Push commits to the existing branch
-   - Check if a PR exists for the current branch
-   - If no PR exists and we're on a feature branch, offer to create one using `gh pr create`
-
-7. **Execute the plan**: Actually run the git commands to stage, commit, and push the changes
-
-Before proceeding, show me the current git status and ask for confirmation of the commit strategy.
+**Goal**: One command (`/commit`) → automatic branching → commit → PR → browser, with minimal user interruption.
