@@ -23,6 +23,18 @@ export class TransactionsService {
   }
 
   /**
+   * Retrieves transactions for a specific bank connection
+   * @param userId The user's UUID
+   * @param connectionId The bank connection ID
+   * @param accessToken The Bitwarden access token
+   * @returns Promise containing transactions and account information
+   */
+  async getTransactionsByBankConnection(userId: string, connectionId: string, accessToken: string): Promise<object> {
+    const data = await this.scraperService.scrapeByBankConnection(userId, connectionId, accessToken);
+    return data;
+  }
+
+  /**
    * Retrieves list of all available accounts
    * @returns Promise containing list of accounts and total count
    */
