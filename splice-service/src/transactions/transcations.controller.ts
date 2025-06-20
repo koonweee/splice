@@ -2,6 +2,7 @@ import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/co
 import { ApiKeyType } from '@splice/api';
 import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
+
 @Controller('transactions')
 export class TransactionsController {
   constructor(
@@ -27,10 +28,19 @@ export class TransactionsController {
     return this.transactionsService.getAccounts();
   }
 
-  // @Get('generate-jwt')
-  // async generateJwt() {
-  //   return this.jwtService.signAsync({ userId: 'koonweee' });
-  // }
+  @Get('by-connection')
+  async getByConnection(
+    @Query('userId') userId: string,
+    @Query('connectionId') connectionId: string,
+    @Headers('X-Secret') secret: string,
+  ) {
+    if (!secret || !userId || !connectionId) {
+      throw new BadRequestException('Missing required parameters');
+    }
+
+    const authToken = await this.apiKeyStoreService.retrieveApiKey(userId, ApiKeyType.BITWARDEN, secret);
+    return this.transactionsService.getTransactionsByBankConnection(userId, connectionId, authToken);
+  }
 
   @Get('secret')
   async getSecret(@Query('secretId') secretId: string) {

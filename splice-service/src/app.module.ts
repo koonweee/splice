@@ -10,6 +10,10 @@ import { User } from 'src/users/user.entity';
 import { UsersModule } from 'src/users/users.module';
 import { ApiKeyStore } from './api-key-store/api-key-store.entity';
 import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
+import { BankConnection } from './bank-connections/bank-connection.entity';
+import { BankConnectionsModule } from './bank-connections/bank-connections.module';
+import { BankRegistry } from './bank-registry/bank-registry.entity';
+import { BankRegistryModule } from './bank-registry/bank-registry.module';
 
 @Module({
   imports: [
@@ -26,7 +30,7 @@ import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
         username: configService.get('postgres.username'),
         password: configService.get('postgres.password'),
         database: configService.get('postgres.database'),
-        entities: [User, ApiKeyStore],
+        entities: [User, ApiKeyStore, BankRegistry, BankConnection],
         synchronize: true, // Set to false in production
       }),
       inject: [ConfigService],
@@ -36,6 +40,8 @@ import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
     HealthModule,
     UsersModule,
     ApiKeyStoreModule,
+    BankRegistryModule,
+    BankConnectionsModule,
   ],
 })
 export class AppModule implements NestModule {
