@@ -3,4 +3,4 @@ dist
 downloads/
 screenshots/
 .env
-coverage/
+coverage

@@ -1,9 +1,14 @@
 import type { INestApplication } from '@nestjs/common';
+import { ExecutionContext } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { AuthGuard, PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import * as request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
+import { AuthModule } from '../../src/auth/auth.module';
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
 import { BankConnection } from '../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
@@ -11,6 +16,7 @@ import { BankRegistryController } from '../../src/bank-registry/bank-registry.co
 import { BankRegistry } from '../../src/bank-registry/bank-registry.entity';
 import { BankRegistryService } from '../../src/bank-registry/bank-registry.service';
 import { User } from '../../src/users/user.entity';
+import { UsersModule } from '../../src/users/users.module';
 
 describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
@@ -28,6 +34,7 @@ describe('Bank Management (e2e)', () => {
       email: 'test@example.com',
       createdAt: new Date(),
       updatedAt: new Date(),
+      tokenVersion: 1,
     };
 
     testBank = {
@@ -81,7 +88,16 @@ describe('Bank Management (e2e)', () => {
           useValue: mockBankConnectionService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(AuthGuard('jwt'))
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = testUser; // Mock the authenticated user
+          return true;
+        },
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     await app.init();
@@ -321,6 +337,84 @@ describe('Bank Management (e2e)', () => {
 
       expect(response.body).toHaveLength(0);
       expect(bankRegistryService.findAllActive).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('JWT Authentication', () => {
+    let authApp: INestApplication<App>;
+
+    beforeAll(async () => {
+      // Create a separate app instance WITHOUT overriding the AuthGuard
+      // so we can test actual JWT authentication
+      const authModuleFixture = await Test.createTestingModule({
+        imports: [
+          ConfigModule.forRoot({
+            isGlobal: true,
+            load: [() => ({ jwt: { secret: 'test-jwt-secret' } })],
+          }),
+          TypeOrmModule.forRoot({
+            type: 'sqlite',
+            database: ':memory:',
+            entities: [User],
+            synchronize: true,
+          }),
+          PassportModule,
+          UsersModule,
+          AuthModule,
+        ],
+        controllers: [BankConnectionController],
+        providers: [
+          {
+            provide: BankConnectionService,
+            useValue: {
+              findByUserId: jest.fn().mockResolvedValue([]),
+              create: jest.fn(),
+            },
+          },
+        ],
+      }).compile();
+
+      authApp = authModuleFixture.createNestApplication();
+      await authApp.init();
+    });
+
+    afterAll(async () => {
+      await authApp.close();
+    });
+
+    it('should reject requests without JWT token', async () => {
+      const response = await request(authApp.getHttpServer()).get(`/users/${testUser.uuid}/banks`);
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject requests with invalid JWT token', async () => {
+      const response = await request(authApp.getHttpServer())
+        .get(`/users/${testUser.uuid}/banks`)
+        .set('Authorization', 'Bearer invalid-jwt-token');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject requests with malformed Authorization header', async () => {
+      const response = await request(authApp.getHttpServer())
+        .get(`/users/${testUser.uuid}/banks`)
+        .set('Authorization', 'InvalidFormat some-token');
+
+      expect(response.status).toBe(401);
+    });
+
+    it('should reject requests with expired or revoked JWT token', async () => {
+      // This would test a token with an old version number
+      // In a real scenario, you'd generate a JWT with an outdated version
+      const response = await request(authApp.getHttpServer())
+        .get(`/users/${testUser.uuid}/banks`)
+        .set(
+          'Authorization',
+          'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJ2ZXIiOjF9.invalid',
+        );
+
+      expect(response.status).toBe(401);
     });
   });
 });

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { User } from './user.entity';
@@ -8,14 +9,22 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
-  async create(username: string, email?: string): Promise<User> {
+  async create(username: string, email?: string): Promise<{ user: User; apiKey: string }> {
     const user = this.userRepository.create({
       username,
       email,
     });
-    return await this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    const apiKey = this.jwtService.sign({
+      sub: savedUser.uuid,
+      ver: savedUser.tokenVersion,
+    });
+
+    return { user: savedUser, apiKey };
   }
 
   async findAll(): Promise<User[]> {
@@ -28,5 +37,9 @@ export class UserService {
 
   async findByUsername(username: string): Promise<User | null> {
     return await this.userRepository.findOneBy({ username });
+  }
+
+  async revokeAllApiKeys(uuid: string): Promise<void> {
+    await this.userRepository.increment({ uuid }, 'tokenVersion', 1);
   }
 }
