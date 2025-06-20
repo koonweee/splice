@@ -10,6 +10,7 @@ import { User } from 'src/users/user.entity';
 import { UsersModule } from 'src/users/users.module';
 import { ApiKeyStore } from './api-key-store/api-key-store.entity';
 import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
+import { AuthModule } from './auth/auth.module';
 import { BankConnection } from './bank-connections/bank-connection.entity';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
 import { BankRegistry } from './bank-registry/bank-registry.entity';
@@ -42,6 +43,7 @@ import { BankRegistryModule } from './bank-registry/bank-registry.module';
     ApiKeyStoreModule,
     BankRegistryModule,
     BankConnectionsModule,
+    AuthModule,
   ],
 })
 export class AppModule implements NestModule {
