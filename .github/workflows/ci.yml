@@ -15,9 +15,28 @@ on:
       - '.github/workflows/**'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      splice-api: ${{ steps.filter.outputs.splice-api }}
+      splice-service: ${{ steps.filter.outputs.splice-service }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    - uses: dorny/paths-filter@v3
+      id: filter
+      with:
+        filters: |
+          splice-api:
+            - 'splice-api/**'
+          splice-service:
+            - 'splice-service/**'
+
   build-and-test-splice-api:
     name: Build and Test splice-api
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.splice-api == 'true' }}
 
     defaults:
       run:
@@ -46,6 +65,8 @@ jobs:
   build-and-test-splice-service:
     name: Build and Test splice-service
     runs-on: ubuntu-latest
+    needs: changes
+    if: ${{ needs.changes.outputs.splice-service == 'true' }}
 
     defaults:
       run:
