@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import {
   BankConnectionResponse,
   BankConnectionStatus,
@@ -8,6 +9,7 @@ import {
 import { BankConnectionService } from './bank-connection.service';
 
 @Controller('users/:userId/banks')
+@UseGuards(AuthGuard('jwt'))
 export class BankConnectionController {
   constructor(private readonly bankConnectionService: BankConnectionService) {}
 
