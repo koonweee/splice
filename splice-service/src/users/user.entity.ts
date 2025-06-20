@@ -11,6 +11,9 @@ export class User {
   @Column()
   email?: string;
 
+  @Column({ type: 'int', default: 1 })
+  tokenVersion: number;
+
   @CreateDateColumn()
   createdAt: Date;
 
