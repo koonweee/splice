@@ -1,13 +1,4 @@
-import {
-  Body,
-  Controller,
-  Delete,
-  Get,
-  NotFoundException,
-  Param,
-  Post,
-  Put
-} from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put } from '@nestjs/common';
 import {
   BankConnectionResponse,
   BankConnectionStatus,
@@ -18,12 +9,10 @@ import { BankConnectionService } from './bank-connection.service';
 
 @Controller('users/:userId/banks')
 export class BankConnectionController {
-  constructor(private readonly bankConnectionService: BankConnectionService) { }
+  constructor(private readonly bankConnectionService: BankConnectionService) {}
 
   @Get()
-  async getUserBankConnections(
-    @Param('userId') userId: string,
-  ): Promise<BankConnectionResponse[]> {
+  async getUserBankConnections(@Param('userId') userId: string): Promise<BankConnectionResponse[]> {
     const connections = await this.bankConnectionService.findByUserId(userId);
 
     return connections.map((connection) => ({
@@ -45,7 +34,6 @@ export class BankConnectionController {
     @Param('userId') userId: string,
     @Body() createRequest: CreateBankConnectionRequest,
   ): Promise<BankConnectionResponse> {
-
     const connection = await this.bankConnectionService.create(userId, createRequest);
 
     return {

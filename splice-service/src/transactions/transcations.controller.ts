@@ -1,10 +1,4 @@
-import {
-  BadRequestException,
-  Controller,
-  Get,
-  Headers,
-  Query
-} from '@nestjs/common';
+import { BadRequestException, Controller, Get, Headers, Query } from '@nestjs/common';
 import { ApiKeyType } from '@splice/api';
 import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
 import { TransactionsService } from 'src/transactions/transactions.service';
@@ -14,7 +8,7 @@ export class TransactionsController {
   constructor(
     private readonly transactionsService: TransactionsService,
     private readonly apiKeyStoreService: ApiKeyStoreService,
-  ) { }
+  ) {}
 
   @Get('by-account')
   async getByAccount(

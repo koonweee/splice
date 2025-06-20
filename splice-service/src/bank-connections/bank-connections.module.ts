@@ -13,4 +13,4 @@ import { BankConnectionService } from './bank-connection.service';
   providers: [BankConnectionService],
   exports: [BankConnectionService],
 })
-export class BankConnectionsModule { }
+export class BankConnectionsModule {}

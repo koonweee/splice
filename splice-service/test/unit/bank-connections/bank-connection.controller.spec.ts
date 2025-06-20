@@ -56,8 +56,7 @@ describe('BankConnectionController', () => {
           useValue: mockBankConnectionService,
         },
       ],
-    })
-      .compile();
+    }).compile();
 
     controller = module.get<BankConnectionController>(BankConnectionController);
     bankConnectionService = module.get(BankConnectionService);
@@ -130,11 +129,7 @@ describe('BankConnectionController', () => {
       const updatedConnection = { ...mockBankConnection, ...updateRequest };
       bankConnectionService.update.mockResolvedValue(updatedConnection);
 
-      const result = await controller.updateBankConnection(
-        mockUserId,
-        mockConnectionId,
-        updateRequest,
-      );
+      const result = await controller.updateBankConnection(mockUserId, mockConnectionId, updateRequest);
 
       expect(bankConnectionService.update).toHaveBeenCalledWith(mockUserId, mockConnectionId, updateRequest);
       expect(result.alias).toBe('Updated Alias');
@@ -167,9 +162,7 @@ describe('BankConnectionController', () => {
     it('should throw NotFoundException when connection not found', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
-      await expect(
-        controller.getBankConnectionStatus(mockUserId, mockConnectionId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getBankConnectionStatus(mockUserId, mockConnectionId)).rejects.toThrow(NotFoundException);
     });
   });
 });
