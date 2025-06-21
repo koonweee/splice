@@ -1,14 +1,14 @@
 import { Controller, Get, Headers, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiKeyType } from '@splice/api';
-import { ApiKeyStoreService } from 'src/api-key-store/api-key-store.service';
-import { TransactionsService } from 'src/transactions/transactions.service';
+import { ApiKeyStoreService } from '../api-key-store/api-key-store.service';
 import {
   GetSecretDto,
   GetTransactionsByAccountDto,
   GetTransactionsByConnectionDto,
   TransactionHeadersDto,
 } from './dto';
+import { TransactionsService } from './transactions.service';
 @Controller('transactions')
 @UseGuards(AuthGuard('jwt'))
 export class TransactionsController {

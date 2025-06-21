@@ -2,9 +2,9 @@ import { unlink } from 'node:fs/promises';
 import { Injectable, type Logger } from '@nestjs/common';
 import type { ScrapedData } from '@splice/api';
 import type { Page } from 'playwright';
-import { CSVLoader } from 'src/scraper/strategies/loaders/csv.loader';
-import { parseDBSCSV } from 'src/scraper/strategies/parsers/dbs-checking-savings-csv.parser';
-import type { ScraperStrategy } from 'src/scraper/strategies/types';
+import { CSVLoader } from './loaders/csv.loader';
+import { parseDBSCSV } from './parsers/dbs-checking-savings-csv.parser';
+import { ScraperStrategy } from './types';
 
 interface AccountSelectorOption {
   text: string;
@@ -121,13 +121,19 @@ export class DBSStrategy implements ScraperStrategy {
     const accountOptions = await accountSelector.locator('option').all();
 
     // Use Promise.all to handle async operations correctly
-    const accountSelectorOptions: AccountSelectorOption[] = await Promise.all(
-      accountOptions.map(async (option) => {
-        const text = await option.textContent();
-        const optionValue = await option.getAttribute('value');
-        return { text: text.trim(), value: optionValue };
-      }),
-    );
+    const accountSelectorOptions: AccountSelectorOption[] = (
+      await Promise.all(
+        accountOptions.map(async (option) => {
+          const text = await option.textContent();
+          const optionValue = await option.getAttribute('value');
+          if (!text || !optionValue) {
+            logger.warn('Skipping account option with missing text or value');
+            return null; // Skip this option if text or value is missing
+          }
+          return { text: text.trim(), value: optionValue };
+        }), // Filter out null values,
+      )
+    ).filter((account) => account !== null);
 
     // Filter out the "Please select" option
     const filteredAccounts = accountSelectorOptions.filter(
@@ -259,11 +265,11 @@ export class DBSStrategy implements ScraperStrategy {
       .contentFrame()
       .getByText('Total Balance:');
     const totalBalanceText = await totalBalance.textContent();
-    const totalBalanceAmount = totalBalanceText.split(' ')[1];
+    const totalBalanceAmount = totalBalanceText?.split(' ')[1];
     logger.log(`Total balance: ${totalBalanceAmount}`);
 
     // Strip non-numeric characters, then parse as float
-    const totalBalanceAsNumber = parseFloat(totalBalanceAmount.replace(/[^0-9.-]+/g, ''));
+    const totalBalanceAsNumber = totalBalanceAmount ? parseFloat(totalBalanceAmount.replace(/[^0-9.-]+/g, '')) : 0;
     logger.log(`Total balance as number: ${totalBalanceAsNumber}`);
 
     // Return placeholder for now, TODO: parse the CSV file
