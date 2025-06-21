@@ -85,7 +85,7 @@
     "testEnvironment": "node",
     "moduleNameMapper": {
       "^src/(.*)$": "<rootDir>/src/$1",
-      "^@splice/api$": "<rootDir>/../splice-api/dist"
+      "^@splice/api$": "<rootDir>/../splice-api/dist/index.js"
     }
   }
 }
