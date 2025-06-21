@@ -4,9 +4,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## General Instructions
 
-### Task Completion
-- When you have completed a task or set of tasks, use the macOS `say` command to announce completion: `say "I'm done!"`
-
 ## Common Commands
 
 ### Development
@@ -15,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `cd splice-api && bun run build` - Build shared types package
 
 ### Testing and Quality
-- `cd splice-service && bun run test` - Run all tests (unit + E2E) 
+- `cd splice-service && bun run test` - Run all tests (unit + E2E)
 - `cd splice-service && bun run test:unit` - Run unit tests only
 - `cd splice-service && bun run test:e2e` - Run E2E tests only
 - `cd splice-service && bun run test:watch` - Run tests in watch mode
