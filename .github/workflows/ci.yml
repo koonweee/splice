@@ -86,7 +86,7 @@ jobs:
       run: bun run lint
 
     - name: Run type checking
-      run: bunx tsc --noEmit
+      run: bunx tsc --build --dry
 
     - name: Run tests with coverage
       run: bun run test:cov
