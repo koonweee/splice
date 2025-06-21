@@ -2,6 +2,11 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## General Instructions
+
+### Task Completion
+- When you have completed a task or set of tasks, use the macOS `say` command to announce completion: `say "I'm done!"`
+
 ## Common Commands
 
 ### Development

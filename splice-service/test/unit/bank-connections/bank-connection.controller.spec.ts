@@ -71,7 +71,7 @@ describe('BankConnectionController', () => {
       const connections = [mockBankConnection];
       bankConnectionService.findByUserId.mockResolvedValue(connections);
 
-      const result = await controller.getUserBankConnections(mockUserId);
+      const result = await controller.getUserBankConnections({ userId: mockUserId });
 
       expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(mockUserId);
       expect(result).toEqual([
@@ -101,7 +101,7 @@ describe('BankConnectionController', () => {
     it('should create bank connection successfully', async () => {
       bankConnectionService.create.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.createBankConnection(mockUserId, createRequest);
+      const result = await controller.createBankConnection({ userId: mockUserId }, createRequest);
 
       expect(bankConnectionService.create).toHaveBeenCalledWith(mockUserId, createRequest);
       expect(result).toEqual({
@@ -129,7 +129,10 @@ describe('BankConnectionController', () => {
       const updatedConnection = { ...mockBankConnection, ...updateRequest };
       bankConnectionService.update.mockResolvedValue(updatedConnection);
 
-      const result = await controller.updateBankConnection(mockUserId, mockConnectionId, updateRequest);
+      const result = await controller.updateBankConnection(
+        { userId: mockUserId, connectionId: mockConnectionId },
+        updateRequest,
+      );
 
       expect(bankConnectionService.update).toHaveBeenCalledWith(mockUserId, mockConnectionId, updateRequest);
       expect(result.alias).toBe('Updated Alias');
@@ -140,7 +143,7 @@ describe('BankConnectionController', () => {
     it('should delete bank connection successfully', async () => {
       bankConnectionService.delete.mockResolvedValue();
 
-      await controller.deleteBankConnection(mockUserId, mockConnectionId);
+      await controller.deleteBankConnection({ userId: mockUserId, connectionId: mockConnectionId });
 
       expect(bankConnectionService.delete).toHaveBeenCalledWith(mockUserId, mockConnectionId);
     });
@@ -150,7 +153,7 @@ describe('BankConnectionController', () => {
     it('should return connection status', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.getBankConnectionStatus(mockUserId, mockConnectionId);
+      const result = await controller.getBankConnectionStatus({ userId: mockUserId, connectionId: mockConnectionId });
 
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(mockUserId, mockConnectionId);
       expect(result).toEqual({
@@ -162,7 +165,9 @@ describe('BankConnectionController', () => {
     it('should throw NotFoundException when connection not found', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
-      await expect(controller.getBankConnectionStatus(mockUserId, mockConnectionId)).rejects.toThrow(NotFoundException);
+      await expect(
+        controller.getBankConnectionStatus({ userId: mockUserId, connectionId: mockConnectionId }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
