@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { VaultModule } from 'src/vault/vault.module';
 import { BankConnectionsModule } from '../bank-connections/bank-connections.module';
 import { BankRegistryModule } from '../bank-registry/bank-registry.module';
+import { VaultModule } from '../vault/vault.module';
 import { ScraperService } from './scraper.service';
 import { DBSStrategy } from './strategies/dbs.strategy';
 

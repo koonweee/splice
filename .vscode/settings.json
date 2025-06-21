@@ -10,5 +10,7 @@
   },
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome"
-  }
+  },
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.preferences.importModuleSpecifier": "relative"
 }

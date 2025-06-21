@@ -7,13 +7,13 @@ import { BankConnection } from '../../../src/bank-connections/bank-connection.en
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { BankRegistry } from '../../../src/bank-registry/bank-registry.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
+import { MOCK_USER, MOCK_USER_UUID } from '../../mocks/mocks';
 
 describe('BankConnectionService', () => {
   let service: BankConnectionService;
   let repository: jest.Mocked<Repository<BankConnection>>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
 
-  const mockUserId = 'test-user-id';
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
 
@@ -30,7 +30,7 @@ describe('BankConnectionService', () => {
 
   const mockBankConnection: BankConnection = {
     id: mockConnectionId,
-    userId: mockUserId,
+    userId: MOCK_USER_UUID,
     bankId: mockBankId,
     status: BankConnectionStatus.ACTIVE,
     alias: 'My Test Account',
@@ -38,7 +38,7 @@ describe('BankConnectionService', () => {
     authDetailsUuid: 'auth-details-uuid',
     createdAt: new Date(),
     updatedAt: new Date(),
-    user: undefined,
+    user: MOCK_USER,
     bank: mockBank,
   };
 
@@ -84,10 +84,10 @@ describe('BankConnectionService', () => {
       const connections = [mockBankConnection];
       repository.find.mockResolvedValue(connections);
 
-      const result = await service.findByUserId(mockUserId);
+      const result = await service.findByUserId(MOCK_USER_UUID);
 
       expect(repository.find).toHaveBeenCalledWith({
-        where: { userId: mockUserId },
+        where: { userId: MOCK_USER_UUID },
         relations: ['bank'],
         order: { createdAt: 'DESC' },
       });
@@ -97,7 +97,7 @@ describe('BankConnectionService', () => {
     it('should return empty array when user has no connections', async () => {
       repository.find.mockResolvedValue([]);
 
-      const result = await service.findByUserId(mockUserId);
+      const result = await service.findByUserId(MOCK_USER_UUID);
 
       expect(result).toEqual([]);
     });
@@ -107,10 +107,10 @@ describe('BankConnectionService', () => {
     it('should return connection when found', async () => {
       repository.findOne.mockResolvedValue(mockBankConnection);
 
-      const result = await service.findByUserIdAndConnectionId(mockUserId, mockConnectionId);
+      const result = await service.findByUserIdAndConnectionId(MOCK_USER_UUID, mockConnectionId);
 
       expect(repository.findOne).toHaveBeenCalledWith({
-        where: { id: mockConnectionId, userId: mockUserId },
+        where: { id: mockConnectionId, userId: MOCK_USER_UUID },
         relations: ['bank'],
       });
       expect(result).toEqual(mockBankConnection);
@@ -119,7 +119,7 @@ describe('BankConnectionService', () => {
     it('should return null when connection not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      const result = await service.findByUserIdAndConnectionId(mockUserId, 'non-existent');
+      const result = await service.findByUserIdAndConnectionId(MOCK_USER_UUID, 'non-existent');
 
       expect(result).toBeNull();
     });
@@ -138,11 +138,11 @@ describe('BankConnectionService', () => {
       repository.save.mockResolvedValue(mockBankConnection);
       repository.findOne.mockResolvedValue(mockBankConnection);
 
-      const result = await service.create(mockUserId, createRequest);
+      const result = await service.create(MOCK_USER_UUID, createRequest);
 
       expect(bankRegistryService.findById).toHaveBeenCalledWith(mockBankId);
       expect(repository.create).toHaveBeenCalledWith({
-        userId: mockUserId,
+        userId: MOCK_USER_UUID,
         bankId: mockBankId,
         alias: createRequest.alias,
         authDetailsUuid: createRequest.authDetailsUuid,
@@ -155,14 +155,16 @@ describe('BankConnectionService', () => {
     it('should throw NotFoundException when bank not found', async () => {
       bankRegistryService.findById.mockResolvedValue(null);
 
-      await expect(service.create(mockUserId, createRequest)).rejects.toThrow(new NotFoundException('Bank not found'));
+      await expect(service.create(MOCK_USER_UUID, createRequest)).rejects.toThrow(
+        new NotFoundException('Bank not found'),
+      );
     });
 
     it('should throw NotFoundException when bank is not active', async () => {
       const inactiveBank = { ...mockBank, isActive: false };
       bankRegistryService.findById.mockResolvedValue(inactiveBank);
 
-      await expect(service.create(mockUserId, createRequest)).rejects.toThrow(
+      await expect(service.create(MOCK_USER_UUID, createRequest)).rejects.toThrow(
         new NotFoundException('Bank is not available for new connections'),
       );
     });
@@ -183,7 +185,7 @@ describe('BankConnectionService', () => {
         .mockResolvedValueOnce(updatedConnection); // for final fetch with relations
       repository.save.mockResolvedValue(updatedConnection);
 
-      const result = await service.update(mockUserId, mockConnectionId, updateRequest);
+      const result = await service.update(MOCK_USER_UUID, mockConnectionId, updateRequest);
 
       expect(repository.save).toHaveBeenCalledWith({
         ...existingConnection,
@@ -195,7 +197,7 @@ describe('BankConnectionService', () => {
     it('should throw NotFoundException when connection not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.update(mockUserId, mockConnectionId, updateRequest)).rejects.toThrow(
+      await expect(service.update(MOCK_USER_UUID, mockConnectionId, updateRequest)).rejects.toThrow(
         new NotFoundException('Bank connection not found'),
       );
     });
@@ -208,13 +210,13 @@ describe('BankConnectionService', () => {
       repository.findOne.mockResolvedValueOnce(existingConnection).mockResolvedValueOnce(updatedConnection);
       repository.save.mockResolvedValue(updatedConnection);
 
-      const result = await service.update(mockUserId, mockConnectionId, partialUpdate);
+      const result = await service.update(MOCK_USER_UUID, mockConnectionId, partialUpdate);
 
       expect(repository.save).toHaveBeenCalledWith({
         ...existingConnection,
         alias: 'New Alias',
       });
-      expect(result.status).toBe(mockBankConnection.status); // Should remain unchanged
+      expect(result?.status).toBe(mockBankConnection.status); // Should remain unchanged
     });
   });
 
@@ -223,7 +225,7 @@ describe('BankConnectionService', () => {
       repository.findOne.mockResolvedValue(mockBankConnection);
       repository.remove.mockResolvedValue(mockBankConnection);
 
-      await service.delete(mockUserId, mockConnectionId);
+      await service.delete(MOCK_USER_UUID, mockConnectionId);
 
       expect(repository.remove).toHaveBeenCalledWith(mockBankConnection);
     });
@@ -231,7 +233,7 @@ describe('BankConnectionService', () => {
     it('should throw NotFoundException when connection not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.delete(mockUserId, mockConnectionId)).rejects.toThrow(
+      await expect(service.delete(MOCK_USER_UUID, mockConnectionId)).rejects.toThrow(
         new NotFoundException('Bank connection not found'),
       );
     });

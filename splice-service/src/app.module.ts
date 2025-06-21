@@ -1,13 +1,6 @@
 import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import config from 'src/config';
-import { HealthModule } from 'src/health/health.module';
-import { SecurityHeadersMiddleware } from 'src/middleware/security-headers.middleware';
-import { ScraperModule } from 'src/scraper/scraper.module';
-import { TransactionsModule } from 'src/transactions/transactions.module';
-import { User } from 'src/users/user.entity';
-import { UsersModule } from 'src/users/users.module';
 import { ApiKeyStore } from './api-key-store/api-key-store.entity';
 import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
 import { AuthModule } from './auth/auth.module';
@@ -15,6 +8,13 @@ import { BankConnection } from './bank-connections/bank-connection.entity';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
 import { BankRegistry } from './bank-registry/bank-registry.entity';
 import { BankRegistryModule } from './bank-registry/bank-registry.module';
+import config from './config';
+import { HealthModule } from './health/health.module';
+import { SecurityHeadersMiddleware } from './middleware/security-headers.middleware';
+import { ScraperModule } from './scraper/scraper.module';
+import { TransactionsModule } from './transactions/transactions.module';
+import { User } from './users/user.entity';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [

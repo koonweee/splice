@@ -43,6 +43,10 @@ export function parseTransactionLine(line: string): string[] {
 
   for (let i = 0; i < 3; i++) {
     const match = remainingLine.match(regex);
+    if (!match) {
+      // If no more matches, we can stop
+      break;
+    }
     const currentMatch = match[0];
     const currentMatchWithoutWrappingCommas = currentMatch.substring(1, currentMatch.length - 1);
     matches.push(currentMatchWithoutWrappingCommas);

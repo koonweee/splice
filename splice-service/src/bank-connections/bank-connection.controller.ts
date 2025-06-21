@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpException,
+  NotFoundException,
+  Param,
+  Post,
+  Put,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { BankConnectionResponse, BankConnectionStatus } from '@splice/api';
 import { BankConnectionService } from './bank-connection.service';
@@ -39,6 +50,10 @@ export class BankConnectionController {
   ): Promise<BankConnectionResponse> {
     const connection = await this.bankConnectionService.create(params.userId, createRequest);
 
+    if (!connection) {
+      throw new HttpException('Bank connection could not be created', 400);
+    }
+
     return {
       id: connection.id,
       bankId: connection.bankId,
@@ -59,6 +74,10 @@ export class BankConnectionController {
     @Body() updateRequest: UpdateBankConnectionDto,
   ): Promise<BankConnectionResponse> {
     const connection = await this.bankConnectionService.update(params.userId, params.connectionId, updateRequest);
+
+    if (!connection) {
+      throw new NotFoundException('Bank connection not found');
+    }
 
     return {
       id: connection.id,

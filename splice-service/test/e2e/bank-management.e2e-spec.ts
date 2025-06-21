@@ -5,7 +5,7 @@ import { AuthGuard, PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
-import * as request from 'supertest';
+import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthModule } from '../../src/auth/auth.module';
@@ -54,7 +54,7 @@ describe('Bank Management (e2e)', () => {
       bankId: testBank.id,
       status: BankConnectionStatus.PENDING_AUTH,
       alias: 'My Test Bank',
-      lastSync: null,
+      lastSync: undefined,
       authDetailsUuid: uuidv4(),
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -100,6 +100,7 @@ describe('Bank Management (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+    app.useLogger(false); // Disable logging for cleaner test output
     await app.init();
 
     bankRegistryService = moduleFixture.get(BankRegistryService);
@@ -199,7 +200,7 @@ describe('Bank Management (e2e)', () => {
         .expect(200);
 
       expect(statusResponse.body.status).toBe(BankConnectionStatus.PENDING_AUTH);
-      expect(statusResponse.body.lastSync).toBeNull();
+      expect(statusResponse.body.lastSync).toBeUndefined();
 
       // Verify service was called
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(testUser.uuid, connectionId);

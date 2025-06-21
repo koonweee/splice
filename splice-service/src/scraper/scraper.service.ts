@@ -10,10 +10,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { BankConnectionStatus, type ScrapedData } from '@splice/api';
 import { type Browser, chromium } from 'playwright';
-import { ScraperStrategy } from 'src/scraper/strategies/types';
-import { VaultService } from 'src/vault/vault.service';
 import { BankConnectionService } from '../bank-connections/bank-connection.service';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
+import { VaultService } from '../vault/vault.service';
+import { ScraperStrategy } from './strategies/types';
 
 @Injectable()
 export class ScraperService implements OnModuleInit, OnModuleDestroy {
@@ -82,11 +82,12 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       const data = await strategy.scrape(secret, page, this.logger);
       return data;
     } catch (error) {
-      this.logger.error(`Failed to scrape ${strategy.startUrl}: ${error.message}`);
-      throw new HttpException(
-        `Failed to scrape ${strategy.startUrl}: ${error.message}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+      let message: string = 'An error occurred while scraping the website';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      this.logger.error(`Failed to scrape ${strategy.startUrl}: ${message}`);
+      throw new HttpException(`Failed to scrape ${strategy.startUrl}: ${message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     } finally {
       await page.close();
     }
@@ -145,10 +146,14 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
         await page.close();
       }
     } catch (error) {
-      this.logger.error(`Failed to scrape bank connection ${connectionId}: ${error.message}`);
+      let message: string = 'An error occurred while scraping the bank connection';
+      if (error instanceof Error) {
+        message = error.message;
+      }
+      this.logger.error(`Failed to scrape bank connection ${connectionId}: ${message}`);
       // Update connection status to error
       await this.bankConnectionService.updateStatus(connectionId, BankConnectionStatus.ERROR);
-      throw new HttpException(`Failed to scrape bank connection: ${error.message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(`Failed to scrape bank connection: ${message}`, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

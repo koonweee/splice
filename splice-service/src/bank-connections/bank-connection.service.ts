@@ -28,7 +28,7 @@ export class BankConnectionService {
     });
   }
 
-  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnection> {
+  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnection | null> {
     const bank = await this.bankRegistryService.findById(createRequest.bankId);
     if (!bank) {
       throw new NotFoundException('Bank not found');
@@ -58,7 +58,7 @@ export class BankConnectionService {
     userId: string,
     connectionId: string,
     updateRequest: UpdateBankConnectionRequest,
-  ): Promise<BankConnection> {
+  ): Promise<BankConnection | null> {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
       throw new NotFoundException('Bank connection not found');

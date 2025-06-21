@@ -3,7 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import { ApiKeyType, BankConnectionStatus } from '@splice/api';
-import * as request from 'supertest';
+import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
 import { ApiKeyStoreController } from '../../src/api-key-store/api-key-store.controller';
@@ -63,6 +63,8 @@ describe('DTO Validation (e2e)', () => {
       .compile();
 
     app = moduleFixture.createNestApplication();
+
+    app.useLogger(false); // Disable logging for cleaner test output
 
     // Configure ValidationPipe with the same settings as main.ts
     app.useGlobalPipes(

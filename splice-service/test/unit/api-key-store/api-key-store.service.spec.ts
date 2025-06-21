@@ -115,7 +115,7 @@ describe('ApiKeyStoreService', () => {
 
       // Get the encrypted data from the create call
       const createCall = repository.create.mock.calls[0][0];
-      const encryptedKey = createCall.encryptedKey;
+      const encryptedKey = createCall.encryptedKey ?? '';
 
       // Mock the repository to return the stored data
       repository.findOne.mockResolvedValue({

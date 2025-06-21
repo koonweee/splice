@@ -8,7 +8,10 @@ export class CSVLoader implements Loader {
       const content = await fs.readFile(filePath, 'utf-8');
       return content;
     } catch (error) {
-      throw new Error(`Failed to load CSV file: ${error.message}`);
+      if (error instanceof Error) {
+        throw new Error(`Failed to load CSV file: ${error.message}`);
+      }
+      throw new Error('Failed to load CSV file: Unknown error');
     }
   }
 }
