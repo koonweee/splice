@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { BankConnectionResponse, BankConnectionStatus } from '@splice/api';
 import { BankConnectionService } from './bank-connection.service';
 import {
@@ -20,12 +21,17 @@ import {
   UpdateBankConnectionDto,
 } from './dto';
 
+@ApiTags('bank-connections')
 @Controller('users/:userId/banks')
 @UseGuards(AuthGuard('jwt'))
+@ApiBearerAuth()
 export class BankConnectionController {
   constructor(private readonly bankConnectionService: BankConnectionService) {}
 
   @Get()
+  @ApiOperation({ summary: 'Get all bank connections for a user' })
+  @ApiResponse({ status: 200, description: 'List of bank connections' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getUserBankConnections(@Param() params: BankConnectionParamsDto): Promise<BankConnectionResponse[]> {
     const connections = await this.bankConnectionService.findByUserId(params.userId);
 
@@ -44,6 +50,10 @@ export class BankConnectionController {
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new bank connection' })
+  @ApiResponse({ status: 201, description: 'Bank connection created successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async createBankConnection(
     @Param() params: BankConnectionParamsDto,
     @Body() createRequest: CreateBankConnectionDto,
@@ -69,6 +79,10 @@ export class BankConnectionController {
   }
 
   @Put(':connectionId')
+  @ApiOperation({ summary: 'Update an existing bank connection' })
+  @ApiResponse({ status: 200, description: 'Bank connection updated successfully' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateBankConnection(
     @Param() params: BankConnectionByIdParamsDto,
     @Body() updateRequest: UpdateBankConnectionDto,
@@ -94,11 +108,19 @@ export class BankConnectionController {
   }
 
   @Delete(':connectionId')
+  @ApiOperation({ summary: 'Delete a bank connection' })
+  @ApiResponse({ status: 200, description: 'Bank connection deleted successfully' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async deleteBankConnection(@Param() params: BankConnectionByIdParamsDto): Promise<void> {
     await this.bankConnectionService.delete(params.userId, params.connectionId);
   }
 
   @Get(':connectionId/status')
+  @ApiOperation({ summary: 'Get bank connection status' })
+  @ApiResponse({ status: 200, description: 'Bank connection status retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getBankConnectionStatus(
     @Param() params: BankConnectionByIdParamsDto,
   ): Promise<{ status: BankConnectionStatus; lastSync?: Date }> {
