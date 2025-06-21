@@ -10,6 +10,7 @@ import { BankRegistryService } from '../../../src/bank-registry/bank-registry.se
 import { ScraperService } from '../../../src/scraper/scraper.service';
 import type { ScraperStrategy } from '../../../src/scraper/strategies/types';
 import { VaultService } from '../../../src/vault/vault.service';
+import { MOCK_USER, MOCK_USER_UUID } from '../../mocks/mocks';
 
 describe('ScraperService', () => {
   let service: ScraperService;
@@ -17,8 +18,6 @@ describe('ScraperService', () => {
   let bankRegistryService: jest.Mocked<BankRegistryService>;
   let vaultService: jest.Mocked<VaultService>;
   let configService: jest.Mocked<ConfigService>;
-
-  const mockUserId = 'test-user-id';
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
   const mockAccessToken = 'test-access-token';
@@ -43,7 +42,7 @@ describe('ScraperService', () => {
 
   const mockBankConnection: BankConnection = {
     id: mockConnectionId,
-    userId: mockUserId,
+    userId: MOCK_USER_UUID,
     bankId: mockBankId,
     status: BankConnectionStatus.ACTIVE,
     alias: 'My Test Account',
@@ -51,7 +50,7 @@ describe('ScraperService', () => {
     authDetailsUuid: 'auth-details-uuid',
     createdAt: new Date(),
     updatedAt: new Date(),
-    user: undefined,
+    user: MOCK_USER,
     bank: mockBank,
   };
 
@@ -111,6 +110,8 @@ describe('ScraperService', () => {
       ],
     }).compile();
 
+    module.useLogger(false); // Disable logging for cleaner test output
+
     service = module.get<ScraperService>(ScraperService);
     bankConnectionService = module.get(BankConnectionService);
     bankRegistryService = module.get(BankRegistryService);
@@ -144,9 +145,9 @@ describe('ScraperService', () => {
     });
 
     it('should scrape bank connection successfully', async () => {
-      const result = await service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken);
+      const result = await service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken);
 
-      expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(mockUserId, mockConnectionId);
+      expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(MOCK_USER_UUID, mockConnectionId);
       expect(bankConnectionService.updateStatus).toHaveBeenCalledWith(mockConnectionId, BankConnectionStatus.ACTIVE);
       expect(vaultService.getSecret).toHaveBeenCalledWith('auth-details-uuid', mockAccessToken);
       expect(mockPage.goto).toHaveBeenCalledWith('https://test-bank.com/login');
@@ -160,7 +161,7 @@ describe('ScraperService', () => {
     it('should throw HttpException when browser not initialized', async () => {
       (service as any).browser = null;
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         HttpException,
       );
     });
@@ -168,7 +169,7 @@ describe('ScraperService', () => {
     it('should throw HttpException when bank connection not found', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         new HttpException('Bank connection not found', 404),
       );
     });
@@ -177,7 +178,7 @@ describe('ScraperService', () => {
       const inactiveConnection = { ...mockBankConnection, status: BankConnectionStatus.INACTIVE };
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(inactiveConnection);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         new HttpException('Bank connection is not active', 400),
       );
     });
@@ -187,7 +188,7 @@ describe('ScraperService', () => {
       const connectionWithoutScraper = { ...mockBankConnection, bank: bankWithoutScraper };
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(connectionWithoutScraper);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         new HttpException('Bank is not configured for scraping', 400),
       );
     });
@@ -197,7 +198,7 @@ describe('ScraperService', () => {
       const connectionWithUnknownScraper = { ...mockBankConnection, bank: bankWithUnknownScraper };
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(connectionWithUnknownScraper);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         new HttpException('No scraper strategy found for bank: Test Bank', 404),
       );
     });
@@ -206,7 +207,7 @@ describe('ScraperService', () => {
       const scrapingError = new Error('Scraping failed');
       (mockStrategy.scrape as jest.Mock).mockRejectedValue(scrapingError);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         HttpException,
       );
 
@@ -218,7 +219,7 @@ describe('ScraperService', () => {
       const scrapingError = new Error('Network error');
       mockPage.goto.mockRejectedValue(scrapingError);
 
-      await expect(service.scrapeByBankConnection(mockUserId, mockConnectionId, mockAccessToken)).rejects.toThrow(
+      await expect(service.scrapeByBankConnection(MOCK_USER_UUID, mockConnectionId, mockAccessToken)).rejects.toThrow(
         HttpException,
       );
 
