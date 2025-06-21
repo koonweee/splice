@@ -4,29 +4,29 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateCol
 @Entity()
 export class BankRegistry {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  declare id: string;
 
   @Column()
-  name: string;
+  declare name: string;
 
   @Column({ nullable: true })
-  logoUrl?: string;
+  declare logoUrl?: string;
 
   @Column({
     type: 'enum',
     enum: BankSourceType,
   })
-  sourceType: BankSourceType;
+  declare sourceType: BankSourceType;
 
   @Column({ nullable: true })
-  scraperIdentifier?: string;
+  declare scraperIdentifier?: string;
 
   @Column({ default: true })
-  isActive: boolean;
+  declare isActive: boolean;
 
   @CreateDateColumn()
-  createdAt: Date;
+  declare createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  declare updatedAt: Date;
 }

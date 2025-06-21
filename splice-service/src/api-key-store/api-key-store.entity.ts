@@ -5,24 +5,24 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Update
 @Index(['userUuid', 'keyType'], { unique: true })
 export class ApiKeyStore {
   @PrimaryGeneratedColumn('uuid')
-  uuid: string;
+  declare uuid: string;
 
   @Column({ type: 'uuid' })
-  userUuid: string;
+  declare userUuid: string;
 
   @Column({
     type: 'enum',
     enum: ApiKeyType,
   })
-  keyType: ApiKeyType;
+  declare keyType: ApiKeyType;
 
   @Column({ type: 'text' })
-  encryptedKey: string;
+  declare encryptedKey: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  declare createdAt: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  declare updatedAt: Date;
 }
 export { ApiKeyType };
