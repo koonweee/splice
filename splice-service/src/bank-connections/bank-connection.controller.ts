@@ -1,12 +1,13 @@
 import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import {
-  BankConnectionResponse,
-  BankConnectionStatus,
-  CreateBankConnectionRequest,
-  UpdateBankConnectionRequest,
-} from '@splice/api';
+import { BankConnectionResponse, BankConnectionStatus } from '@splice/api';
 import { BankConnectionService } from './bank-connection.service';
+import {
+  BankConnectionByIdParamsDto,
+  BankConnectionParamsDto,
+  CreateBankConnectionDto,
+  UpdateBankConnectionDto,
+} from './dto';
 
 @Controller('users/:userId/banks')
 @UseGuards(AuthGuard('jwt'))
@@ -14,8 +15,8 @@ export class BankConnectionController {
   constructor(private readonly bankConnectionService: BankConnectionService) {}
 
   @Get()
-  async getUserBankConnections(@Param('userId') userId: string): Promise<BankConnectionResponse[]> {
-    const connections = await this.bankConnectionService.findByUserId(userId);
+  async getUserBankConnections(@Param() params: BankConnectionParamsDto): Promise<BankConnectionResponse[]> {
+    const connections = await this.bankConnectionService.findByUserId(params.userId);
 
     return connections.map((connection) => ({
       id: connection.id,
@@ -33,10 +34,10 @@ export class BankConnectionController {
 
   @Post()
   async createBankConnection(
-    @Param('userId') userId: string,
-    @Body() createRequest: CreateBankConnectionRequest,
+    @Param() params: BankConnectionParamsDto,
+    @Body() createRequest: CreateBankConnectionDto,
   ): Promise<BankConnectionResponse> {
-    const connection = await this.bankConnectionService.create(userId, createRequest);
+    const connection = await this.bankConnectionService.create(params.userId, createRequest);
 
     return {
       id: connection.id,
@@ -54,11 +55,10 @@ export class BankConnectionController {
 
   @Put(':connectionId')
   async updateBankConnection(
-    @Param('userId') userId: string,
-    @Param('connectionId') connectionId: string,
-    @Body() updateRequest: UpdateBankConnectionRequest,
+    @Param() params: BankConnectionByIdParamsDto,
+    @Body() updateRequest: UpdateBankConnectionDto,
   ): Promise<BankConnectionResponse> {
-    const connection = await this.bankConnectionService.update(userId, connectionId, updateRequest);
+    const connection = await this.bankConnectionService.update(params.userId, params.connectionId, updateRequest);
 
     return {
       id: connection.id,
@@ -75,19 +75,15 @@ export class BankConnectionController {
   }
 
   @Delete(':connectionId')
-  async deleteBankConnection(
-    @Param('userId') userId: string,
-    @Param('connectionId') connectionId: string,
-  ): Promise<void> {
-    await this.bankConnectionService.delete(userId, connectionId);
+  async deleteBankConnection(@Param() params: BankConnectionByIdParamsDto): Promise<void> {
+    await this.bankConnectionService.delete(params.userId, params.connectionId);
   }
 
   @Get(':connectionId/status')
   async getBankConnectionStatus(
-    @Param('userId') userId: string,
-    @Param('connectionId') connectionId: string,
+    @Param() params: BankConnectionByIdParamsDto,
   ): Promise<{ status: BankConnectionStatus; lastSync?: Date }> {
-    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(userId, connectionId);
+    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(params.userId, params.connectionId);
     if (!connection) {
       throw new NotFoundException('Bank connection not found');
     }

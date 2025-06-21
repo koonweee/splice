@@ -1,7 +1,7 @@
-import { BadRequestException, Body, Controller, Headers, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Headers, Param, Post, Res } from '@nestjs/common';
 import type { Response } from 'express';
-import type { ApiKeyType } from './api-key-store.entity';
 import { ApiKeyStoreService } from './api-key-store.service';
+import { ApiKeyHeadersDto, ApiKeyParamsDto, CreateApiKeyDto } from './dto';
 
 @Controller('api-key-store')
 export class ApiKeyStoreController {
@@ -9,15 +9,12 @@ export class ApiKeyStoreController {
 
   @Post(':userUuid')
   async storeApiKey(
-    @Param('userUuid') userUuid: string,
-    @Headers('X-Api-Key') apiKey: string,
-    @Body('keyType') keyType: ApiKeyType,
+    @Param() params: ApiKeyParamsDto,
+    @Headers() headers: ApiKeyHeadersDto,
+    @Body() body: CreateApiKeyDto,
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
-    if (!apiKey) {
-      throw new BadRequestException('API key not provided');
-    }
-    const secret = await this.apiKeyStoreService.storeApiKey(userUuid, apiKey, keyType);
+    const secret = await this.apiKeyStoreService.storeApiKey(params.userUuid, headers['X-Api-Key'], body.keyType);
     response.set('X-Secret', secret);
   }
 }
