@@ -25,7 +25,9 @@ export class VaultService {
       const secret = await client.secrets().get(secretId);
       return secret.value;
     } catch (error) {
-      this.logger.error(`Failed to retrieve secret ${secretId}: ${error.message}`);
+      if (error instanceof Error) {
+        this.logger.error(`Failed to retrieve secret ${secretId}: ${error.message}`);
+      }
       throw error;
     }
   }
