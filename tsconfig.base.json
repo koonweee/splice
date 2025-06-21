@@ -13,8 +13,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "strict": true,
-    "esModuleInterop": true,
-    "composite": true
+    "esModuleInterop": true
   },
   "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.e2e-spec.ts", "test"]
 }
