@@ -1,9 +1,9 @@
-import { ApiKeyType } from '@splice/api';
+import { ApiKeyStore, ApiKeyType } from '@splice/api';
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
 @Index(['userUuid', 'keyType'], { unique: true })
-export class ApiKeyStoreEntity {
+export class ApiKeyStoreEntity implements ApiKeyStore {
   @PrimaryGeneratedColumn('uuid')
   declare uuid: string;
 
