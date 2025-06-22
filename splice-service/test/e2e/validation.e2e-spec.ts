@@ -196,19 +196,13 @@ describe('DTO Validation (e2e)', () => {
       });
     });
 
-    describe('POST /users/:id/revoke-api-keys', () => {
-      it('should reject request with invalid UUID', async () => {
-        await request(app.getHttpServer()).post('/users/invalid-id/revoke-api-keys').expect(400);
-
-        expect(userService.revokeAllApiKeys).not.toHaveBeenCalled();
-      });
-
-      it('should accept request with valid UUID', async () => {
-        const validUuid = uuidv4();
+    describe('POST /users/revoke-api-keys', () => {
+      it('should revoke API keys for authenticated user', async () => {
         userService.revokeAllApiKeys.mockResolvedValue();
 
-        // User can only revoke their own API keys - should get 403 Forbidden for different user ID
-        await request(app.getHttpServer()).post(`/users/${validUuid}/revoke-api-keys`).expect(403);
+        await request(app.getHttpServer()).post('/users/revoke-api-keys').expect(200);
+
+        expect(userService.revokeAllApiKeys).toHaveBeenCalledWith(testUserId);
       });
     });
   });
@@ -257,8 +251,8 @@ describe('DTO Validation (e2e)', () => {
         // Empty string header gets passed through
         await request(app.getHttpServer()).post('/api-key-store').set('X-Api-Key', '').send(validData).expect(201);
 
-        // Empty header is treated as undefined by the controller
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, undefined, ApiKeyType.BITWARDEN);
+        // Empty header is passed as empty string
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, '', ApiKeyType.BITWARDEN);
       });
 
       it('should reject request with invalid keyType', async () => {

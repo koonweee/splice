@@ -35,7 +35,7 @@ export class TransactionsController {
     @Query() query: GetTransactionsByAccountDto,
     @Headers() headers: TransactionHeadersDto,
   ) {
-    const secret = (headers as any)['x-secret'] || headers['X-Secret'];
+    const secret = headers['X-Secret'] || (headers as any)['x-secret'];
     const authToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
     return this.transactionsService.getTransactionsForAccount(query.accountName, authToken);
   }
@@ -62,7 +62,7 @@ export class TransactionsController {
     @Query() query: GetTransactionsByConnectionDto,
     @Headers() headers: TransactionHeadersDto,
   ) {
-    const secret = (headers as any)['x-secret'] || headers['X-Secret'];
+    const secret = headers['X-Secret'] || (headers as any)['x-secret'];
     const authToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
     return this.transactionsService.getTransactionsByBankConnection(user.id, query.connectionId, authToken);
   }
