@@ -5,7 +5,7 @@ import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import type { Browser, Page } from 'playwright';
 import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
-import { BankEntity } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 import { ScraperService } from '../../../src/scraper/scraper.service';
 import type { ScraperStrategy } from '../../../src/scraper/strategies/types';

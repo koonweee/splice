@@ -4,7 +4,7 @@ import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
-import { BankEntity } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { MOCK_USER, MOCK_USER_UUID } from '../../mocks/mocks';
 
 describe('BankConnectionController', () => {

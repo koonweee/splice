@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { BankEntity } from '../bank-registry/bank-registry.entity';
+import { BankEntity } from '../bank-registry/bank.entity';
 import { UserEntity } from '../users/user.entity';
 
 @Entity()

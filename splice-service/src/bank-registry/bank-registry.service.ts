@@ -2,7 +2,7 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BankSourceType } from '@splice/api';
 import { Repository } from 'typeorm';
-import { BankEntity } from './bank-registry.entity';
+import { BankEntity } from './bank.entity';
 
 @Injectable()
 export class BankRegistryService implements OnModuleInit {
