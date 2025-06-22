@@ -117,7 +117,7 @@ describe('JwtStrategy', () => {
       expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
     });
 
-    it('should return user when no version is provided in payload', async () => {
+    it('should throw UnauthorizedException when no version is provided in payload', async () => {
       const payload = {
         sub: 'test-user-uuid',
       };
@@ -129,10 +129,8 @@ describe('JwtStrategy', () => {
 
       userService.findOne.mockResolvedValue(userWithAnyVersion);
 
-      const result = await strategy.validate(payload);
-
+      await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
       expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
-      expect(result).toEqual(userWithAnyVersion);
     });
 
     it('should throw UnauthorizedException with correct message when user not found', async () => {
