@@ -32,6 +32,7 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    AuthModule,
     TransactionsModule,
     ScraperModule,
     HealthModule,
@@ -39,7 +40,6 @@ import { UsersModule } from './users/users.module';
     ApiKeyStoreModule,
     BankRegistryModule,
     BankConnectionsModule,
-    AuthModule,
   ],
 })
 export class AppModule implements NestModule {

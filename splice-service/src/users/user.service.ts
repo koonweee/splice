@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { User } from '@splice/api';
 import type { Repository } from 'typeorm';
+import { AuthService } from '../auth/auth.service';
 import { UserEntity } from './user.entity';
 
 @Injectable()
@@ -10,7 +10,7 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
-    private jwtService: JwtService,
+    private authService: AuthService,
   ) {}
 
   async create(username: string, email?: string): Promise<{ user: User; apiKey: string }> {
@@ -20,10 +20,7 @@ export class UserService {
     });
     const savedUser = await this.userRepository.save(user);
 
-    const apiKey = this.jwtService.sign({
-      sub: savedUser.id,
-      ver: savedUser.tokenVersion,
-    });
+    const apiKey = this.authService.generateApiKey(savedUser.id, savedUser.tokenVersion);
 
     return { user: savedUser, apiKey };
   }

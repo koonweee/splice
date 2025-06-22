@@ -3,13 +3,14 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '@splice/api';
 import type { Repository } from 'typeorm';
+import { AuthService } from '../../../src/auth/auth.service';
 import { UserEntity } from '../../../src/users/user.entity';
 import { UserService } from '../../../src/users/user.service';
 
 describe('UserService', () => {
   let service: UserService;
   let repository: jest.Mocked<Repository<UserEntity>>;
-  let jwtService: jest.Mocked<JwtService>;
+  let authService: jest.Mocked<AuthService>;
 
   const mockUser: User = {
     id: 'test-id',
@@ -33,6 +34,10 @@ describe('UserService', () => {
       sign: jest.fn(),
     };
 
+    const mockAuthService = {
+      generateApiKey: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -44,12 +49,16 @@ describe('UserService', () => {
           provide: JwtService,
           useValue: mockJwtService,
         },
+        {
+          provide: AuthService,
+          useValue: mockAuthService,
+        },
       ],
     }).compile();
 
     service = module.get<UserService>(UserService);
     repository = module.get(getRepositoryToken(UserEntity));
-    jwtService = module.get(JwtService);
+    authService = module.get(AuthService);
   });
 
   afterEach(() => {
@@ -64,7 +73,7 @@ describe('UserService', () => {
 
       repository.create.mockReturnValue(mockUser);
       repository.save.mockResolvedValue(mockUser);
-      jwtService.sign.mockReturnValue(expectedApiKey);
+      authService.generateApiKey.mockReturnValue(expectedApiKey);
 
       const result = await service.create(username, email);
 
@@ -73,10 +82,7 @@ describe('UserService', () => {
         email,
       });
       expect(repository.save).toHaveBeenCalledWith(mockUser);
-      expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: mockUser.id,
-        ver: mockUser.tokenVersion,
-      });
+      expect(authService.generateApiKey).toHaveBeenCalledWith(mockUser.id, mockUser.tokenVersion);
       expect(result).toEqual({
         user: mockUser,
         apiKey: expectedApiKey,
@@ -89,7 +95,7 @@ describe('UserService', () => {
 
       repository.create.mockReturnValue(mockUser);
       repository.save.mockResolvedValue(mockUser);
-      jwtService.sign.mockReturnValue(expectedApiKey);
+      authService.generateApiKey.mockReturnValue(expectedApiKey);
 
       const result = await service.create(username);
 
