@@ -1,5 +1,5 @@
 import type { Bank, BankSourceType } from '../banks';
-import { BaseInterface } from '../common/base.types';
+import type { BaseInterface } from '../common/base.types';
 
 export enum BankConnectionStatus {
   ACTIVE = 'ACTIVE',

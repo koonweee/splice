@@ -1,4 +1,4 @@
-import { BaseInterface } from '../common/base.types';
+import type { BaseInterface } from '../common/base.types';
 
 export interface User extends BaseInterface {
   uuid: string;
