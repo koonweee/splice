@@ -1,6 +1,6 @@
 export interface GetTransactionsByAccountQuery {
   accountName: string;
-  userUuid: string;
+  userId: string;
 }
 
 export interface GetTransactionsByConnectionQuery {

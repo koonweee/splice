@@ -1,6 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { BankSourceType } from '@splice/api';
-import { BankEntity } from '../../../src/bank-registry/bank.entity';
+import { Bank, BankSourceType } from '@splice/api';
 import { BankRegistryController } from '../../../src/bank-registry/bank-registry.controller';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 
@@ -8,7 +7,7 @@ describe('BankRegistryController', () => {
   let controller: BankRegistryController;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
 
-  const mockBanks: BankEntity[] = [
+  const mockBanks: Bank[] = [
     {
       id: 'bank-1',
       name: 'DBS Bank',
@@ -86,7 +85,7 @@ describe('BankRegistryController', () => {
     });
 
     it('should handle banks with missing optional fields', async () => {
-      const bankWithoutLogo: BankEntity = {
+      const bankWithoutLogo: Bank = {
         id: 'bank-3',
         name: 'Test Bank',
         logoUrl: undefined,

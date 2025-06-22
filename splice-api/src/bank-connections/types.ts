@@ -1,4 +1,5 @@
 import type { Bank, BankSourceType } from '../banks';
+import type { BaseInterface } from '../common/base.types';
 
 export enum BankConnectionStatus {
   ACTIVE = 'ACTIVE',
@@ -7,17 +8,14 @@ export enum BankConnectionStatus {
   PENDING_AUTH = 'PENDING_AUTH',
 }
 
-export interface BankConnection {
-  id: string;
+export interface BankConnection extends BaseInterface {
   userId: string;
   bankId: string;
   status: BankConnectionStatus;
   alias?: string;
   lastSync?: Date;
   authDetailsUuid: string;
-  createdAt: Date;
-  updatedAt: Date;
-  bank?: Bank;
+  bank: Bank;
 }
 
 export interface CreateBankConnectionRequest {

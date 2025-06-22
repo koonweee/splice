@@ -31,7 +31,7 @@ export class TransactionsController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getByAccount(@Query() query: GetTransactionsByAccountDto, @Headers() headers: TransactionHeadersDto) {
     const authToken = await this.apiKeyStoreService.retrieveApiKey(
-      query.userUuid,
+      query.userId,
       ApiKeyType.BITWARDEN,
       headers['X-Secret'],
     );

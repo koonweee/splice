@@ -1,11 +1,9 @@
 import { Bank, BankSourceType } from '@splice/api';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-export class BankEntity implements Bank {
-  @PrimaryGeneratedColumn('uuid')
-  declare id: string;
-
+export class BankEntity extends BaseEntity implements Bank {
   @Column()
   declare name: string;
 
@@ -23,10 +21,4 @@ export class BankEntity implements Bank {
 
   @Column({ default: true })
   declare isActive: boolean;
-
-  @CreateDateColumn()
-  declare createdAt: Date;
-
-  @UpdateDateColumn()
-  declare updatedAt: Date;
 }

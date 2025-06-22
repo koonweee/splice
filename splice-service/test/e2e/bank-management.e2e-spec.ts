@@ -4,15 +4,13 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthGuard, PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { BankConnectionStatus, BankSourceType } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, BankSourceType, User } from '@splice/api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthModule } from '../../src/auth/auth.module';
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
-import { BankConnectionEntity } from '../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
-import { BankEntity } from '../../src/bank-registry/bank.entity';
 import { BankRegistryController } from '../../src/bank-registry/bank-registry.controller';
 import { BankRegistryService } from '../../src/bank-registry/bank-registry.service';
 import { UserEntity } from '../../src/users/user.entity';
@@ -22,14 +20,14 @@ describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let testUser: UserEntity;
-  let testBank: BankEntity;
-  let testConnection: BankConnectionEntity;
+  let testUser: User;
+  let testBank: Bank;
+  let testConnection: BankConnection;
 
   beforeAll(async () => {
     // Create test data objects
     testUser = {
-      uuid: uuidv4(),
+      id: uuidv4(),
       username: 'testuser',
       email: 'test@example.com',
       createdAt: new Date(),
@@ -50,7 +48,7 @@ describe('Bank Management (e2e)', () => {
 
     testConnection = {
       id: uuidv4(),
-      userId: testUser.uuid,
+      userId: testUser.id,
       bankId: testBank.id,
       status: BankConnectionStatus.PENDING_AUTH,
       alias: 'My Test Bank',
@@ -58,7 +56,6 @@ describe('Bank Management (e2e)', () => {
       authDetailsUuid: uuidv4(),
       createdAt: new Date(),
       updatedAt: new Date(),
-      user: testUser,
       bank: testBank,
     };
 
@@ -162,7 +159,7 @@ describe('Bank Management (e2e)', () => {
       bankConnectionService.create.mockResolvedValue(mockCreatedConnection);
 
       const createConnectionResponse = await request(app.getHttpServer())
-        .post(`/users/${testUser.uuid}/banks`)
+        .post(`/users/${testUser.id}/banks`)
         .send(createConnectionRequest)
         .expect(201);
 
@@ -173,16 +170,14 @@ describe('Bank Management (e2e)', () => {
       expect(createConnectionResponse.body.sourceType).toBe(testBank.sourceType);
 
       // Verify service was called
-      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.uuid, createConnectionRequest);
+      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.id, createConnectionRequest);
 
       const connectionId = createConnectionResponse.body.id;
 
       // Step 3: Get user's bank connections
       bankConnectionService.findByUserId.mockResolvedValue([mockCreatedConnection]);
 
-      const userConnectionsResponse = await request(app.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks`)
-        .expect(200);
+      const userConnectionsResponse = await request(app.getHttpServer()).get(`/users/${testUser.id}/banks`).expect(200);
 
       expect(userConnectionsResponse.body).toBeInstanceOf(Array);
       expect(userConnectionsResponse.body.length).toBe(1);
@@ -190,20 +185,20 @@ describe('Bank Management (e2e)', () => {
       expect(userConnectionsResponse.body[0].bankName).toBe(testBank.name);
 
       // Verify service was called
-      expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(testUser.uuid);
+      expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(testUser.id);
 
       // Step 4: Check the status of the specific connection
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockCreatedConnection);
 
       const statusResponse = await request(app.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks/${connectionId}/status`)
+        .get(`/users/${testUser.id}/banks/${connectionId}/status`)
         .expect(200);
 
       expect(statusResponse.body.status).toBe(BankConnectionStatus.PENDING_AUTH);
       expect(statusResponse.body.lastSync).toBeUndefined();
 
       // Verify service was called
-      expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(testUser.uuid, connectionId);
+      expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(testUser.id, connectionId);
 
       // Step 5: Update the connection (activate it)
       const updateRequest = {
@@ -220,7 +215,7 @@ describe('Bank Management (e2e)', () => {
       bankConnectionService.update.mockResolvedValue(mockUpdatedConnection);
 
       const updateResponse = await request(app.getHttpServer())
-        .put(`/users/${testUser.uuid}/banks/${connectionId}`)
+        .put(`/users/${testUser.id}/banks/${connectionId}`)
         .send(updateRequest)
         .expect(200);
 
@@ -228,13 +223,13 @@ describe('Bank Management (e2e)', () => {
       expect(updateResponse.body.alias).toBe('My Updated Bank Connection');
 
       // Verify service was called
-      expect(bankConnectionService.update).toHaveBeenCalledWith(testUser.uuid, connectionId, updateRequest);
+      expect(bankConnectionService.update).toHaveBeenCalledWith(testUser.id, connectionId, updateRequest);
 
       // Step 6: Verify the update by checking status again
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockUpdatedConnection);
 
       const updatedStatusResponse = await request(app.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks/${connectionId}/status`)
+        .get(`/users/${testUser.id}/banks/${connectionId}/status`)
         .expect(200);
 
       expect(updatedStatusResponse.body.status).toBe(BankConnectionStatus.ACTIVE);
@@ -242,16 +237,16 @@ describe('Bank Management (e2e)', () => {
       // Step 7: Delete the connection
       bankConnectionService.delete.mockResolvedValue(undefined);
 
-      await request(app.getHttpServer()).delete(`/users/${testUser.uuid}/banks/${connectionId}`).expect(200);
+      await request(app.getHttpServer()).delete(`/users/${testUser.id}/banks/${connectionId}`).expect(200);
 
       // Verify service was called
-      expect(bankConnectionService.delete).toHaveBeenCalledWith(testUser.uuid, connectionId);
+      expect(bankConnectionService.delete).toHaveBeenCalledWith(testUser.id, connectionId);
 
       // Step 8: Verify the connection is deleted
       bankConnectionService.findByUserId.mockResolvedValue([]);
 
       const emptyConnectionsResponse = await request(app.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks`)
+        .get(`/users/${testUser.id}/banks`)
         .expect(200);
 
       expect(emptyConnectionsResponse.body).toBeInstanceOf(Array);
@@ -260,7 +255,7 @@ describe('Bank Management (e2e)', () => {
       // Step 9: Verify accessing deleted connection returns 404
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
-      await request(app.getHttpServer()).get(`/users/${testUser.uuid}/banks/${connectionId}/status`).expect(404);
+      await request(app.getHttpServer()).get(`/users/${testUser.id}/banks/${connectionId}/status`).expect(404);
     });
 
     it("should prevent access to another user's bank connections", async () => {
@@ -310,9 +305,9 @@ describe('Bank Management (e2e)', () => {
       // Mock service to throw NotFoundException
       bankConnectionService.create.mockRejectedValue(new Error('Bank not found'));
 
-      await request(app.getHttpServer()).post(`/users/${testUser.uuid}/banks`).send(createRequest).expect(500); // Service throws error which becomes 500
+      await request(app.getHttpServer()).post(`/users/${testUser.id}/banks`).send(createRequest).expect(500); // Service throws error which becomes 500
 
-      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.uuid, createRequest);
+      expect(bankConnectionService.create).toHaveBeenCalledWith(testUser.id, createRequest);
     });
   });
 
@@ -384,14 +379,14 @@ describe('Bank Management (e2e)', () => {
     });
 
     it('should reject requests without JWT token', async () => {
-      const response = await request(authApp.getHttpServer()).get(`/users/${testUser.uuid}/banks`);
+      const response = await request(authApp.getHttpServer()).get(`/users/${testUser.id}/banks`);
 
       expect(response.status).toBe(401);
     });
 
     it('should reject requests with invalid JWT token', async () => {
       const response = await request(authApp.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks`)
+        .get(`/users/${testUser.id}/banks`)
         .set('Authorization', 'Bearer invalid-jwt-token');
 
       expect(response.status).toBe(401);
@@ -399,7 +394,7 @@ describe('Bank Management (e2e)', () => {
 
     it('should reject requests with malformed Authorization header', async () => {
       const response = await request(authApp.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks`)
+        .get(`/users/${testUser.id}/banks`)
         .set('Authorization', 'InvalidFormat some-token');
 
       expect(response.status).toBe(401);
@@ -409,7 +404,7 @@ describe('Bank Management (e2e)', () => {
       // This would test a token with an old version number
       // In a real scenario, you'd generate a JWT with an outdated version
       const response = await request(authApp.getHttpServer())
-        .get(`/users/${testUser.uuid}/banks`)
+        .get(`/users/${testUser.id}/banks`)
         .set(
           'Authorization',
           'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXVzZXIiLCJ2ZXIiOjF9.invalid',

@@ -1,6 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from '@splice/api';
 import type { Repository } from 'typeorm';
 import { UserEntity } from '../../../src/users/user.entity';
 import { UserService } from '../../../src/users/user.service';
@@ -10,8 +11,8 @@ describe('UserService', () => {
   let repository: jest.Mocked<Repository<UserEntity>>;
   let jwtService: jest.Mocked<JwtService>;
 
-  const mockUser = {
-    uuid: 'test-user-uuid',
+  const mockUser: User = {
+    id: 'test-id',
     username: 'testuser',
     email: 'test@example.com',
     tokenVersion: 1,
@@ -73,7 +74,7 @@ describe('UserService', () => {
       });
       expect(repository.save).toHaveBeenCalledWith(mockUser);
       expect(jwtService.sign).toHaveBeenCalledWith({
-        sub: mockUser.uuid,
+        sub: mockUser.id,
         ver: mockUser.tokenVersion,
       });
       expect(result).toEqual({
@@ -105,36 +106,36 @@ describe('UserService', () => {
 
   describe('revokeAllApiKeys', () => {
     it('should increment token version for user', async () => {
-      const userUuid = 'test-user-uuid';
+      const userId = 'test-user-id';
 
       repository.increment.mockResolvedValue({ affected: 1, raw: {}, generatedMaps: [] });
 
-      await service.revokeAllApiKeys(userUuid);
+      await service.revokeAllApiKeys(userId);
 
-      expect(repository.increment).toHaveBeenCalledWith({ uuid: userUuid }, 'tokenVersion', 1);
+      expect(repository.increment).toHaveBeenCalledWith({ id: userId }, 'tokenVersion', 1);
     });
   });
 
   describe('findOne', () => {
     it('should return user when found', async () => {
-      const userUuid = 'test-user-uuid';
+      const userId = 'test-user-id';
 
       repository.findOneBy.mockResolvedValue(mockUser);
 
-      const result = await service.findOne(userUuid);
+      const result = await service.findOne(userId);
 
-      expect(repository.findOneBy).toHaveBeenCalledWith({ uuid: userUuid });
+      expect(repository.findOneBy).toHaveBeenCalledWith({ id: userId });
       expect(result).toEqual(mockUser);
     });
 
     it('should return null when user not found', async () => {
-      const userUuid = 'non-existent-uuid';
+      const userId = 'non-existent-id';
 
       repository.findOneBy.mockResolvedValue(null);
 
-      const result = await service.findOne(userUuid);
+      const result = await service.findOne(userId);
 
-      expect(repository.findOneBy).toHaveBeenCalledWith({ uuid: userUuid });
+      expect(repository.findOneBy).toHaveBeenCalledWith({ id: userId });
       expect(result).toBeNull();
     });
   });

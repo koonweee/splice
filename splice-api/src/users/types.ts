@@ -1,8 +1,7 @@
-export interface User {
-  uuid: string;
+import type { BaseInterface } from '../common/base.types';
+
+export interface User extends BaseInterface {
   username: string;
   email?: string;
   tokenVersion: number;
-  createdAt: Date;
-  updatedAt: Date;
 }

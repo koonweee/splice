@@ -103,7 +103,7 @@ describe('DTO Validation (e2e)', () => {
         };
 
         userService.create.mockResolvedValue({
-          user: { uuid: uuidv4(), username: 'testuser', email: 'test@example.com' } as any,
+          user: { id: uuidv4(), username: 'testuser', email: 'test@example.com' } as any,
           apiKey: 'test-api-key',
         });
 
@@ -118,7 +118,7 @@ describe('DTO Validation (e2e)', () => {
         };
 
         userService.create.mockResolvedValue({
-          user: { uuid: uuidv4(), username: 'testuser' } as any,
+          user: { id: uuidv4(), username: 'testuser' } as any,
           apiKey: 'test-api-key',
         });
 
@@ -187,9 +187,9 @@ describe('DTO Validation (e2e)', () => {
       });
     });
 
-    describe('POST /users/:uuid/revoke-api-keys', () => {
+    describe('POST /users/:id/revoke-api-keys', () => {
       it('should reject request with invalid UUID', async () => {
-        await request(app.getHttpServer()).post('/users/invalid-uuid/revoke-api-keys').expect(400);
+        await request(app.getHttpServer()).post('/users/invalid-id/revoke-api-keys').expect(400);
 
         expect(userService.revokeAllApiKeys).not.toHaveBeenCalled();
       });
@@ -205,7 +205,7 @@ describe('DTO Validation (e2e)', () => {
   });
 
   describe('ApiKeyStoreController Validation', () => {
-    describe('POST /api-key-store/:userUuid', () => {
+    describe('POST /api-key-store/:userId', () => {
       it('should accept valid API key store data', async () => {
         const validUuid = uuidv4();
         const validData = {
@@ -403,7 +403,6 @@ describe('DTO Validation (e2e)', () => {
   });
 
   describe('TransactionsController Validation', () => {
-    const validUserUuid = uuidv4();
     const validUserId = uuidv4();
     const validConnectionId = uuidv4();
 
@@ -416,18 +415,18 @@ describe('DTO Validation (e2e)', () => {
           .get('/transactions/by-account')
           .query({
             accountName: 'My Account',
-            userUuid: validUserUuid,
+            userId: validUserId,
           })
           .set('X-Secret', 'valid-secret')
           .expect(200); // Auth bypassed, mocked service succeeds
       });
 
-      it('should reject request with invalid userUuid', async () => {
+      it('should reject request with invalid userId', async () => {
         await request(app.getHttpServer())
           .get('/transactions/by-account')
           .query({
             accountName: 'My Account',
-            userUuid: 'invalid-uuid',
+            userId: 'invalid-uuid',
           })
           .set('X-Secret', 'valid-secret')
           .expect(400);
@@ -439,7 +438,7 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer())
           .get('/transactions/by-account')
           .query({
-            userUuid: validUserUuid,
+            userId: validUserId,
           })
           .set('X-Secret', 'valid-secret')
           .expect(400);
@@ -456,11 +455,11 @@ describe('DTO Validation (e2e)', () => {
           .get('/transactions/by-account')
           .query({
             accountName: 'My Account',
-            userUuid: validUserUuid,
+            userId: validUserId,
           })
           .expect(200);
 
-        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(validUserUuid, ApiKeyType.BITWARDEN, undefined);
+        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(validUserId, ApiKeyType.BITWARDEN, undefined);
       });
     });
 

@@ -15,7 +15,7 @@ export class CreateBankConnectionDto implements CreateBankConnectionRequest {
 
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'UUID of the stored authentication details',
+    description: 'ID of the stored authentication details',
   })
   @IsUUID()
   declare authDetailsUuid: string;

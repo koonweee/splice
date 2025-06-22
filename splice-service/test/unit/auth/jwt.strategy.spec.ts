@@ -9,7 +9,7 @@ describe('JwtStrategy', () => {
   let userService: jest.Mocked<UserService>;
 
   const mockUser = {
-    uuid: 'test-user-uuid',
+    id: 'test-id',
     username: 'testuser',
     email: 'test@example.com',
     tokenVersion: 1,
@@ -62,7 +62,7 @@ describe('JwtStrategy', () => {
   describe('validate', () => {
     it('should return user when token is valid and version matches', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 
@@ -70,25 +70,25 @@ describe('JwtStrategy', () => {
 
       const result = await strategy.validate(payload);
 
-      expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
+      expect(userService.findOne).toHaveBeenCalledWith('test-user-id');
       expect(result).toEqual(mockUser);
     });
 
     it('should throw UnauthorizedException when user is not found', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 
       userService.findOne.mockResolvedValue(null);
 
       await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
-      expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
+      expect(userService.findOne).toHaveBeenCalledWith('test-user-id');
     });
 
     it('should return user when token version matches user version', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 
@@ -96,13 +96,13 @@ describe('JwtStrategy', () => {
 
       const result = await strategy.validate(payload);
 
-      expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
+      expect(userService.findOne).toHaveBeenCalledWith('test-user-id');
       expect(result).toEqual(mockUser);
     });
 
     it('should throw UnauthorizedException when token version does not match user version', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 
@@ -114,12 +114,12 @@ describe('JwtStrategy', () => {
       userService.findOne.mockResolvedValue(userWithDifferentVersion);
 
       await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
-      expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
+      expect(userService.findOne).toHaveBeenCalledWith('test-user-id');
     });
 
     it('should throw UnauthorizedException when no version is provided in payload', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
       };
 
       const userWithAnyVersion = {
@@ -130,12 +130,12 @@ describe('JwtStrategy', () => {
       userService.findOne.mockResolvedValue(userWithAnyVersion);
 
       await expect(strategy.validate(payload)).rejects.toThrow(UnauthorizedException);
-      expect(userService.findOne).toHaveBeenCalledWith('test-user-uuid');
+      expect(userService.findOne).toHaveBeenCalledWith('test-user-id');
     });
 
     it('should throw UnauthorizedException with correct message when user not found', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 
@@ -146,7 +146,7 @@ describe('JwtStrategy', () => {
 
     it('should throw UnauthorizedException with correct message when token is revoked', async () => {
       const payload = {
-        sub: 'test-user-uuid',
+        sub: 'test-user-id',
         ver: 1,
       };
 

@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BankSourceType } from '@splice/api';
+import { Bank, BankSourceType } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankEntity } from './bank.entity';
 
@@ -17,18 +17,18 @@ export class BankRegistryService implements OnModuleInit {
     await this.seedBankRegistry();
   }
 
-  async findAllActive(): Promise<BankEntity[]> {
+  async findAllActive(): Promise<Bank[]> {
     return this.bankRegistryRepository.find({
       where: { isActive: true },
       order: { name: 'ASC' },
     });
   }
 
-  async findById(id: string): Promise<BankEntity | null> {
+  async findById(id: string): Promise<Bank | null> {
     return this.bankRegistryRepository.findOne({ where: { id } });
   }
 
-  async findByScraperIdentifier(scraperIdentifier: string): Promise<BankEntity | null> {
+  async findByScraperIdentifier(scraperIdentifier: string): Promise<Bank | null> {
     return this.bankRegistryRepository.findOne({
       where: { scraperIdentifier, isActive: true },
     });

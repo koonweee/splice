@@ -1,6 +1,6 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BankSourceType } from '@splice/api';
+import { Bank, BankSourceType } from '@splice/api';
 import type { Repository } from 'typeorm';
 import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
@@ -9,7 +9,7 @@ describe('BankRegistryService', () => {
   let service: BankRegistryService;
   let repository: jest.Mocked<Repository<BankEntity>>;
 
-  const mockBankRegistry: BankEntity = {
+  const mockBankRegistry: Bank = {
     id: 'test-bank-id',
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
