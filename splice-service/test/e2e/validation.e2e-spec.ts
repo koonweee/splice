@@ -229,11 +229,7 @@ describe('DTO Validation (e2e)', () => {
           .expect(201);
 
         // The mocked auth guard provides a user with the test ID
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
-          testUserId,
-          'valid-api-key',
-          ApiKeyType.BITWARDEN,
-        );
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, 'valid-api-key', ApiKeyType.BITWARDEN);
       });
 
       // Test for invalid UUID parameter removed since userId is no longer in the URL
@@ -248,11 +244,7 @@ describe('DTO Validation (e2e)', () => {
         // Header validation doesn't work as expected for missing headers in NestJS
         await request(app.getHttpServer()).post('/api-key-store').send(validData).expect(201);
 
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
-          testUserId,
-          undefined,
-          ApiKeyType.BITWARDEN,
-        );
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, undefined, ApiKeyType.BITWARDEN);
       });
 
       it('should handle empty X-Api-Key header', async () => {
@@ -266,11 +258,7 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer()).post('/api-key-store').set('X-Api-Key', '').send(validData).expect(201);
 
         // Empty header is treated as undefined by the controller
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
-          testUserId,
-          undefined,
-          ApiKeyType.BITWARDEN,
-        );
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, undefined, ApiKeyType.BITWARDEN);
       });
 
       it('should reject request with invalid keyType', async () => {
@@ -413,11 +401,7 @@ describe('DTO Validation (e2e)', () => {
           })
           .expect(200);
 
-        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(
-          testUserId,
-          ApiKeyType.BITWARDEN,
-          undefined,
-        );
+        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(testUserId, ApiKeyType.BITWARDEN, undefined);
       });
     });
 
