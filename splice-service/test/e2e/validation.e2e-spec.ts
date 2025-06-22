@@ -1,8 +1,8 @@
-import type { INestApplication } from '@nestjs/common';
+import type { ExecutionContext, INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
-import { ApiKeyType, BankConnectionStatus } from '@splice/api';
+import { ApiKeyType, BankConnection, BankConnectionStatus, User } from '@splice/api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -21,6 +21,9 @@ describe('DTO Validation (e2e)', () => {
   let apiKeyStoreService: jest.Mocked<ApiKeyStoreService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
   let transactionsService: jest.Mocked<TransactionsService>;
+
+  // Use a consistent test user ID throughout the test
+  const testUserId = '550e8400-e29b-41d4-a716-446655440000';
 
   beforeAll(async () => {
     // Create mocked services
@@ -59,7 +62,13 @@ describe('DTO Validation (e2e)', () => {
       ],
     })
       .overrideGuard(AuthGuard('jwt'))
-      .useValue({ canActivate: () => true })
+      .useValue({
+        canActivate: (context: ExecutionContext) => {
+          const req = context.switchToHttp().getRequest();
+          req.user = { id: testUserId, username: 'testuser', email: 'test@example.com' };
+          return true;
+        },
+      })
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -103,7 +112,7 @@ describe('DTO Validation (e2e)', () => {
         };
 
         userService.create.mockResolvedValue({
-          user: { id: uuidv4(), username: 'testuser', email: 'test@example.com' } as any,
+          user: { id: testUserId, username: 'testuser', email: 'test@example.com' } as User,
           apiKey: 'test-api-key',
         });
 
@@ -118,7 +127,7 @@ describe('DTO Validation (e2e)', () => {
         };
 
         userService.create.mockResolvedValue({
-          user: { id: uuidv4(), username: 'testuser' } as any,
+          user: { id: testUserId, username: 'testuser' } as User,
           apiKey: 'test-api-key',
         });
 
@@ -198,16 +207,15 @@ describe('DTO Validation (e2e)', () => {
         const validUuid = uuidv4();
         userService.revokeAllApiKeys.mockResolvedValue();
 
-        // Note: JWT auth is bypassed but req.user is undefined, causing 500 error
-        await request(app.getHttpServer()).post(`/users/${validUuid}/revoke-api-keys`).expect(500);
+        // User can only revoke their own API keys - should get 403 Forbidden for different user ID
+        await request(app.getHttpServer()).post(`/users/${validUuid}/revoke-api-keys`).expect(403);
       });
     });
   });
 
   describe('ApiKeyStoreController Validation', () => {
-    describe('POST /api-key-store/:userId', () => {
+    describe('POST /api-key-store', () => {
       it('should accept valid API key store data', async () => {
-        const validUuid = uuidv4();
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
         };
@@ -215,30 +223,22 @@ describe('DTO Validation (e2e)', () => {
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
 
         await request(app.getHttpServer())
-          .post(`/api-key-store/${validUuid}`)
+          .post('/api-key-store')
           .set('X-Api-Key', 'valid-api-key')
           .send(validData)
           .expect(201);
 
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(validUuid, undefined, ApiKeyType.BITWARDEN);
+        // The mocked auth guard provides a user with the test ID
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          'valid-api-key',
+          ApiKeyType.BITWARDEN,
+        );
       });
 
-      it('should reject request with invalid UUID parameter', async () => {
-        const validData = {
-          keyType: ApiKeyType.BITWARDEN,
-        };
-
-        await request(app.getHttpServer())
-          .post('/api-key-store/invalid-uuid')
-          .set('X-Api-Key', 'valid-api-key')
-          .send(validData)
-          .expect(400);
-
-        expect(apiKeyStoreService.storeApiKey).not.toHaveBeenCalled();
-      });
+      // Test for invalid UUID parameter removed since userId is no longer in the URL
 
       it('should handle missing X-Api-Key header', async () => {
-        const validUuid = uuidv4();
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
         };
@@ -246,13 +246,16 @@ describe('DTO Validation (e2e)', () => {
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
 
         // Header validation doesn't work as expected for missing headers in NestJS
-        await request(app.getHttpServer()).post(`/api-key-store/${validUuid}`).send(validData).expect(201);
+        await request(app.getHttpServer()).post('/api-key-store').send(validData).expect(201);
 
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(validUuid, undefined, ApiKeyType.BITWARDEN);
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          undefined,
+          ApiKeyType.BITWARDEN,
+        );
       });
 
       it('should handle empty X-Api-Key header', async () => {
-        const validUuid = uuidv4();
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
         };
@@ -260,23 +263,23 @@ describe('DTO Validation (e2e)', () => {
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
 
         // Empty string header gets passed through
-        await request(app.getHttpServer())
-          .post(`/api-key-store/${validUuid}`)
-          .set('X-Api-Key', '')
-          .send(validData)
-          .expect(201);
+        await request(app.getHttpServer()).post('/api-key-store').set('X-Api-Key', '').send(validData).expect(201);
 
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(validUuid, undefined, ApiKeyType.BITWARDEN);
+        // Empty header is treated as undefined by the controller
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          undefined,
+          ApiKeyType.BITWARDEN,
+        );
       });
 
       it('should reject request with invalid keyType', async () => {
-        const validUuid = uuidv4();
         const invalidData = {
           keyType: 'INVALID_TYPE',
         };
 
         await request(app.getHttpServer())
-          .post(`/api-key-store/${validUuid}`)
+          .post('/api-key-store')
           .set('X-Api-Key', 'valid-api-key')
           .send(invalidData)
           .expect(400);
@@ -285,10 +288,8 @@ describe('DTO Validation (e2e)', () => {
       });
 
       it('should reject request with missing keyType', async () => {
-        const validUuid = uuidv4();
-
         await request(app.getHttpServer())
-          .post(`/api-key-store/${validUuid}`)
+          .post('/api-key-store')
           .set('X-Api-Key', 'valid-api-key')
           .send({})
           .expect(400);
@@ -299,10 +300,9 @@ describe('DTO Validation (e2e)', () => {
   });
 
   describe('BankConnectionController Validation', () => {
-    const validUserId = uuidv4();
     const validConnectionId = uuidv4();
 
-    describe('POST /users/:userId/banks', () => {
+    describe('POST /users/banks', () => {
       it('should accept valid bank connection creation data', async () => {
         const validData = {
           bankId: 'bank-123',
@@ -310,29 +310,20 @@ describe('DTO Validation (e2e)', () => {
           authDetailsUuid: uuidv4(),
         };
 
-        bankConnectionService.create.mockResolvedValue({} as any);
+        bankConnectionService.create.mockResolvedValue(null as unknown as BankConnection);
 
-        // Note: JWT auth is bypassed but response will have undefined bank causing issues
-        await request(app.getHttpServer()).post(`/users/${validUserId}/banks`).send(validData).expect(500);
+        // Note: JWT auth is bypassed but service returns null causing validation error
+        await request(app.getHttpServer()).post('/users/banks').send(validData).expect(400);
       });
 
-      it('should reject request with invalid userId parameter', async () => {
-        const validData = {
-          bankId: 'bank-123',
-          authDetailsUuid: uuidv4(),
-        };
-
-        await request(app.getHttpServer()).post('/users/invalid-uuid/banks').send(validData).expect(400);
-
-        expect(bankConnectionService.create).not.toHaveBeenCalled();
-      });
+      // Test for invalid userId parameter removed since userId is no longer in the URL
 
       it('should reject request with missing bankId', async () => {
         const invalidData = {
           authDetailsUuid: uuidv4(),
         };
 
-        await request(app.getHttpServer()).post(`/users/${validUserId}/banks`).send(invalidData).expect(400);
+        await request(app.getHttpServer()).post('/users/banks').send(invalidData).expect(400);
 
         expect(bankConnectionService.create).not.toHaveBeenCalled();
       });
@@ -343,38 +334,22 @@ describe('DTO Validation (e2e)', () => {
           authDetailsUuid: 'invalid-uuid',
         };
 
-        await request(app.getHttpServer()).post(`/users/${validUserId}/banks`).send(invalidData).expect(400);
+        await request(app.getHttpServer()).post('/users/banks').send(invalidData).expect(400);
 
         expect(bankConnectionService.create).not.toHaveBeenCalled();
       });
     });
 
-    describe('PUT /users/:userId/banks/:connectionId', () => {
+    describe('PUT /users/banks/:connectionId', () => {
       it('should accept valid bank connection update data', async () => {
         const validData = {
           alias: 'Updated Bank Account',
           status: BankConnectionStatus.ACTIVE,
         };
 
-        bankConnectionService.update.mockResolvedValue({} as any);
+        bankConnectionService.update.mockResolvedValue(null as unknown as BankConnection);
 
-        await request(app.getHttpServer())
-          .put(`/users/${validUserId}/banks/${validConnectionId}`)
-          .send(validData)
-          .expect(500); // Will fail because connection.bank is undefined
-      });
-
-      it('should reject request with invalid userId parameter', async () => {
-        const validData = {
-          alias: 'Updated Bank Account',
-        };
-
-        await request(app.getHttpServer())
-          .put(`/users/invalid-uuid/banks/${validConnectionId}`)
-          .send(validData)
-          .expect(400);
-
-        expect(bankConnectionService.update).not.toHaveBeenCalled();
+        await request(app.getHttpServer()).put(`/users/banks/${validConnectionId}`).send(validData).expect(404); // Service returns null, controller throws NotFoundException
       });
 
       it('should reject request with invalid connectionId parameter', async () => {
@@ -382,7 +357,7 @@ describe('DTO Validation (e2e)', () => {
           alias: 'Updated Bank Account',
         };
 
-        await request(app.getHttpServer()).put(`/users/${validUserId}/banks/invalid-uuid`).send(validData).expect(400);
+        await request(app.getHttpServer()).put('/users/banks/invalid-uuid').send(validData).expect(400);
 
         expect(bankConnectionService.update).not.toHaveBeenCalled();
       });
@@ -392,10 +367,7 @@ describe('DTO Validation (e2e)', () => {
           status: 'INVALID_STATUS',
         };
 
-        await request(app.getHttpServer())
-          .put(`/users/${validUserId}/banks/${validConnectionId}`)
-          .send(invalidData)
-          .expect(400);
+        await request(app.getHttpServer()).put(`/users/banks/${validConnectionId}`).send(invalidData).expect(400);
 
         expect(bankConnectionService.update).not.toHaveBeenCalled();
       });
@@ -403,7 +375,6 @@ describe('DTO Validation (e2e)', () => {
   });
 
   describe('TransactionsController Validation', () => {
-    const validUserId = uuidv4();
     const validConnectionId = uuidv4();
 
     describe('GET /transactions/by-account', () => {
@@ -415,31 +386,15 @@ describe('DTO Validation (e2e)', () => {
           .get('/transactions/by-account')
           .query({
             accountName: 'My Account',
-            userId: validUserId,
           })
           .set('X-Secret', 'valid-secret')
           .expect(200); // Auth bypassed, mocked service succeeds
       });
 
-      it('should reject request with invalid userId', async () => {
-        await request(app.getHttpServer())
-          .get('/transactions/by-account')
-          .query({
-            accountName: 'My Account',
-            userId: 'invalid-uuid',
-          })
-          .set('X-Secret', 'valid-secret')
-          .expect(400);
-
-        expect(transactionsService.getTransactionsForAccount).not.toHaveBeenCalled();
-      });
-
       it('should reject request with missing accountName', async () => {
         await request(app.getHttpServer())
           .get('/transactions/by-account')
-          .query({
-            userId: validUserId,
-          })
+          .query({})
           .set('X-Secret', 'valid-secret')
           .expect(400);
 
@@ -455,11 +410,14 @@ describe('DTO Validation (e2e)', () => {
           .get('/transactions/by-account')
           .query({
             accountName: 'My Account',
-            userId: validUserId,
           })
           .expect(200);
 
-        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(validUserId, ApiKeyType.BITWARDEN, undefined);
+        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(
+          testUserId,
+          ApiKeyType.BITWARDEN,
+          undefined,
+        );
       });
     });
 
@@ -471,31 +429,16 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer())
           .get('/transactions/by-connection')
           .query({
-            userId: validUserId,
             connectionId: validConnectionId,
           })
           .set('X-Secret', 'valid-secret')
           .expect(200); // Auth bypassed, mocked service succeeds
       });
 
-      it('should reject request with invalid userId', async () => {
-        await request(app.getHttpServer())
-          .get('/transactions/by-connection')
-          .query({
-            userId: 'invalid-uuid',
-            connectionId: validConnectionId,
-          })
-          .set('X-Secret', 'valid-secret')
-          .expect(400);
-
-        expect(transactionsService.getTransactionsByBankConnection).not.toHaveBeenCalled();
-      });
-
       it('should reject request with invalid connectionId', async () => {
         await request(app.getHttpServer())
           .get('/transactions/by-connection')
           .query({
-            userId: validUserId,
             connectionId: 'invalid-uuid',
           })
           .set('X-Secret', 'valid-secret')

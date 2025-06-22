@@ -18,7 +18,7 @@ import { BankConnectionService } from './bank-connection.service';
 import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnectionDto } from './dto';
 
 @ApiTags('bank-connections')
-@Controller('users/:userId/banks')
+@Controller('users/banks')
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class BankConnectionController {
@@ -51,10 +51,10 @@ export class BankConnectionController {
   @ApiResponse({ status: 400, description: 'Bad request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async createBankConnection(
-    @Param() params: BankConnectionParamsDto,
+    @AuthenticatedUser() user: User,
     @Body() createRequest: CreateBankConnectionDto,
   ): Promise<BankConnectionResponse> {
-    const connection = await this.bankConnectionService.create(params.userId, createRequest);
+    const connection = await this.bankConnectionService.create(user.id, createRequest);
 
     if (!connection) {
       throw new HttpException('Bank connection could not be created', 400);
@@ -80,10 +80,11 @@ export class BankConnectionController {
   @ApiResponse({ status: 404, description: 'Bank connection not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async updateBankConnection(
+    @AuthenticatedUser() user: User,
     @Param() params: BankConnectionByIdParamsDto,
     @Body() updateRequest: UpdateBankConnectionDto,
   ): Promise<BankConnectionResponse> {
-    const connection = await this.bankConnectionService.update(params.userId, params.connectionId, updateRequest);
+    const connection = await this.bankConnectionService.update(user.id, params.connectionId, updateRequest);
 
     if (!connection) {
       throw new NotFoundException('Bank connection not found');
@@ -108,8 +109,11 @@ export class BankConnectionController {
   @ApiResponse({ status: 200, description: 'Bank connection deleted successfully' })
   @ApiResponse({ status: 404, description: 'Bank connection not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async deleteBankConnection(@Param() params: BankConnectionByIdParamsDto): Promise<void> {
-    await this.bankConnectionService.delete(params.userId, params.connectionId);
+  async deleteBankConnection(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+  ): Promise<void> {
+    await this.bankConnectionService.delete(user.id, params.connectionId);
   }
 
   @Get(':connectionId/status')
@@ -118,9 +122,10 @@ export class BankConnectionController {
   @ApiResponse({ status: 404, description: 'Bank connection not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getBankConnectionStatus(
+    @AuthenticatedUser() user: User,
     @Param() params: BankConnectionByIdParamsDto,
   ): Promise<{ status: BankConnectionStatus; lastSync?: Date }> {
-    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(params.userId, params.connectionId);
+    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(user.id, params.connectionId);
     if (!connection) {
       throw new NotFoundException('Bank connection not found');
     }

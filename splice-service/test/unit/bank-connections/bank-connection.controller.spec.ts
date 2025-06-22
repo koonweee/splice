@@ -1,6 +1,6 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, BankConnection, BankConnectionStatus, BankSourceType } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, BankSourceType, User } from '@splice/api';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { MOCK_USER_ID } from '../../mocks/mocks';
@@ -11,6 +11,7 @@ describe('BankConnectionController', () => {
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
+  const mockUser: User = { id: MOCK_USER_ID } as User;
 
   const mockBank: Bank = {
     id: mockBankId,
@@ -68,7 +69,7 @@ describe('BankConnectionController', () => {
       const connections = [mockBankConnection];
       bankConnectionService.findByUserId.mockResolvedValue(connections);
 
-      const result = await controller.getUserBankConnections({ userId: MOCK_USER_ID });
+      const result = await controller.getUserBankConnections(mockUser);
 
       expect(bankConnectionService.findByUserId).toHaveBeenCalledWith(MOCK_USER_ID);
       expect(result).toEqual([
@@ -98,7 +99,7 @@ describe('BankConnectionController', () => {
     it('should create bank connection successfully', async () => {
       bankConnectionService.create.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.createBankConnection({ userId: MOCK_USER_ID }, createRequest);
+      const result = await controller.createBankConnection(mockUser, createRequest);
 
       expect(bankConnectionService.create).toHaveBeenCalledWith(MOCK_USER_ID, createRequest);
       expect(result).toEqual({
@@ -126,10 +127,7 @@ describe('BankConnectionController', () => {
       const updatedConnection = { ...mockBankConnection, ...updateRequest };
       bankConnectionService.update.mockResolvedValue(updatedConnection);
 
-      const result = await controller.updateBankConnection(
-        { userId: MOCK_USER_ID, connectionId: mockConnectionId },
-        updateRequest,
-      );
+      const result = await controller.updateBankConnection(mockUser, { connectionId: mockConnectionId }, updateRequest);
 
       expect(bankConnectionService.update).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId, updateRequest);
       expect(result.alias).toBe('Updated Alias');
@@ -140,7 +138,7 @@ describe('BankConnectionController', () => {
     it('should delete bank connection successfully', async () => {
       bankConnectionService.delete.mockResolvedValue();
 
-      await controller.deleteBankConnection({ userId: MOCK_USER_ID, connectionId: mockConnectionId });
+      await controller.deleteBankConnection(mockUser, { connectionId: mockConnectionId });
 
       expect(bankConnectionService.delete).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId);
     });
@@ -150,10 +148,7 @@ describe('BankConnectionController', () => {
     it('should return connection status', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockBankConnection);
 
-      const result = await controller.getBankConnectionStatus({
-        userId: MOCK_USER_ID,
-        connectionId: mockConnectionId,
-      });
+      const result = await controller.getBankConnectionStatus(mockUser, { connectionId: mockConnectionId });
 
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId);
       expect(result).toEqual({
@@ -165,9 +160,9 @@ describe('BankConnectionController', () => {
     it('should throw NotFoundException when connection not found', async () => {
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
-      await expect(
-        controller.getBankConnectionStatus({ userId: MOCK_USER_ID, connectionId: mockConnectionId }),
-      ).rejects.toThrow(NotFoundException);
+      await expect(controller.getBankConnectionStatus(mockUser, { connectionId: mockConnectionId })).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });

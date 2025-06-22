@@ -4,7 +4,7 @@ import { AuthenticatedRequest } from '@splice/api';
 /**
  * Decorator to get user on requests that have been authenticated by JWT
  */
-export const AuthenticatedUser = createParamDecorator((ctx: ExecutionContext) => {
+export const AuthenticatedUser = createParamDecorator((data: unknown, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest();
   const castedRequest = request as AuthenticatedRequest;
   const { user } = castedRequest;
