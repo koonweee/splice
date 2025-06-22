@@ -8,11 +8,11 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { BankRegistry } from '../bank-registry/bank-registry.entity';
-import { User } from '../users/user.entity';
+import { BankEntity } from '../bank-registry/bank.entity';
+import { UserEntity } from '../users/user.entity';
 
 @Entity()
-export class BankConnection {
+export class BankConnectionEntity {
   @PrimaryGeneratedColumn('uuid')
   declare id: string;
 
@@ -44,11 +44,11 @@ export class BankConnection {
   @UpdateDateColumn()
   declare updatedAt: Date;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'userId' })
-  declare user: User;
+  declare user: UserEntity;
 
-  @ManyToOne(() => BankRegistry)
+  @ManyToOne(() => BankEntity)
   @JoinColumn({ name: 'bankId' })
-  declare bank: BankRegistry;
+  declare bank: BankEntity;
 }

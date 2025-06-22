@@ -2,14 +2,14 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BankSourceType } from '@splice/api';
 import type { Repository } from 'typeorm';
-import { BankRegistry } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 
 describe('BankRegistryService', () => {
   let service: BankRegistryService;
-  let repository: jest.Mocked<Repository<BankRegistry>>;
+  let repository: jest.Mocked<Repository<BankEntity>>;
 
-  const mockBankRegistry: BankRegistry = {
+  const mockBankRegistry: BankEntity = {
     id: 'test-bank-id',
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
@@ -33,14 +33,14 @@ describe('BankRegistryService', () => {
       providers: [
         BankRegistryService,
         {
-          provide: getRepositoryToken(BankRegistry),
+          provide: getRepositoryToken(BankEntity),
           useValue: mockRepository,
         },
       ],
     }).compile();
 
     service = module.get<BankRegistryService>(BankRegistryService);
-    repository = module.get(getRepositoryToken(BankRegistry));
+    repository = module.get(getRepositoryToken(BankEntity));
   });
 
   afterEach(() => {

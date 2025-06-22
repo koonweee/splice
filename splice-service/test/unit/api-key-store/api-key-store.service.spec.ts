@@ -3,12 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { ApiKeyStore, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
+import { ApiKeyStoreEntity, ApiKeyType } from '../../../src/api-key-store/api-key-store.entity';
 import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 
 describe('ApiKeyStoreService', () => {
   let service: ApiKeyStoreService;
-  let repository: jest.Mocked<Repository<ApiKeyStore>>;
+  let repository: jest.Mocked<Repository<ApiKeyStoreEntity>>;
 
   const mockUserUuid = 'test-user-uuid-123';
   const mockApiKey = 'test-api-key-value';
@@ -34,7 +34,7 @@ describe('ApiKeyStoreService', () => {
       providers: [
         ApiKeyStoreService,
         {
-          provide: getRepositoryToken(ApiKeyStore),
+          provide: getRepositoryToken(ApiKeyStoreEntity),
           useValue: mockRepository,
         },
         {
@@ -45,7 +45,7 @@ describe('ApiKeyStoreService', () => {
     }).compile();
 
     service = module.get<ApiKeyStoreService>(ApiKeyStoreService);
-    repository = module.get(getRepositoryToken(ApiKeyStore));
+    repository = module.get(getRepositoryToken(ApiKeyStoreEntity));
   });
 
   afterEach(() => {

@@ -2,17 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { User } from './user.entity';
+import { UserEntity } from './user.entity';
 
 @Injectable()
 export class UserService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(UserEntity)
+    private userRepository: Repository<UserEntity>,
     private jwtService: JwtService,
   ) {}
 
-  async create(username: string, email?: string): Promise<{ user: User; apiKey: string }> {
+  async create(username: string, email?: string): Promise<{ user: UserEntity; apiKey: string }> {
     const user = this.userRepository.create({
       username,
       email,
@@ -27,15 +27,15 @@ export class UserService {
     return { user: savedUser, apiKey };
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<UserEntity[]> {
     return await this.userRepository.find();
   }
 
-  async findOne(uuid: string): Promise<User | null> {
+  async findOne(uuid: string): Promise<UserEntity | null> {
     return await this.userRepository.findOneBy({ uuid });
   }
 
-  async findByUsername(username: string): Promise<User | null> {
+  async findByUsername(username: string): Promise<UserEntity | null> {
     return await this.userRepository.findOneBy({ username });
   }
 
