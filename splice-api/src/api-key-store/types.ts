@@ -1,12 +1,12 @@
+import { BaseInterface } from '../common/base.types';
+
 export enum ApiKeyType {
   BITWARDEN = 'BITWARDEN',
 }
 
-export interface ApiKeyStore {
+export interface ApiKeyStore extends BaseInterface {
   uuid: string;
   userUuid: string;
   keyType: ApiKeyType;
   encryptedKey: string;
-  createdAt: Date;
-  updatedAt: Date;
 }

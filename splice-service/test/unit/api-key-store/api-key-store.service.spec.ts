@@ -55,6 +55,7 @@ describe('ApiKeyStoreService', () => {
   describe('storeApiKey', () => {
     it('should encrypt and store API key successfully', async () => {
       const mockApiKeyStore = {
+        id: 'test-id',
         uuid: 'test-uuid',
         userUuid: mockUserUuid,
         keyType: ApiKeyType.BITWARDEN,
@@ -80,6 +81,7 @@ describe('ApiKeyStoreService', () => {
 
     it('should generate different secrets for the same API key', async () => {
       const mockApiKeyStore = {
+        id: 'test-id',
         uuid: 'test-uuid',
         userUuid: mockUserUuid,
         keyType: ApiKeyType.BITWARDEN,
@@ -101,6 +103,7 @@ describe('ApiKeyStoreService', () => {
     it('should decrypt and return API key successfully', async () => {
       // First store an API key to get a valid secret
       const mockApiKeyStore = {
+        id: 'test-id',
         uuid: 'test-uuid',
         userUuid: mockUserUuid,
         keyType: ApiKeyType.BITWARDEN,
@@ -119,6 +122,7 @@ describe('ApiKeyStoreService', () => {
 
       // Mock the repository to return the stored data
       repository.findOne.mockResolvedValue({
+        id: 'test-id',
         uuid: 'test-uuid',
         userUuid: mockUserUuid,
         keyType: ApiKeyType.BITWARDEN,
@@ -148,6 +152,7 @@ describe('ApiKeyStoreService', () => {
 
     it('should throw UnauthorizedException for invalid secret', async () => {
       repository.findOne.mockResolvedValue({
+        id: 'test-id',
         uuid: 'test-uuid',
         userUuid: mockUserUuid,
         keyType: ApiKeyType.BITWARDEN,

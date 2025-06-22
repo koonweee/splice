@@ -1,9 +1,10 @@
 import { User } from '@splice/api';
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import { Column, Entity } from 'typeorm';
+import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-export class UserEntity implements User {
-  @PrimaryGeneratedColumn('uuid')
+export class UserEntity extends BaseEntity implements User {
+  @Column({ type: 'uuid' })
   declare uuid: string;
 
   @Column()
@@ -14,10 +15,4 @@ export class UserEntity implements User {
 
   @Column({ type: 'int', default: 1 })
   declare tokenVersion: number;
-
-  @CreateDateColumn()
-  declare createdAt: Date;
-
-  @UpdateDateColumn()
-  declare updatedAt: Date;
 }

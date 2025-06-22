@@ -29,6 +29,7 @@ describe('Bank Management (e2e)', () => {
   beforeAll(async () => {
     // Create test data objects
     testUser = {
+      id: uuidv4(),
       uuid: uuidv4(),
       username: 'testuser',
       email: 'test@example.com',

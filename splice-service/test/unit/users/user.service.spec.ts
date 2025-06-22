@@ -11,6 +11,7 @@ describe('UserService', () => {
   let jwtService: jest.Mocked<JwtService>;
 
   const mockUser = {
+    id: 'test-id',
     uuid: 'test-user-uuid',
     username: 'testuser',
     email: 'test@example.com',

@@ -1,21 +1,11 @@
 import { BankConnection, BankConnectionStatus } from '@splice/api';
-import {
-  Column,
-  CreateDateColumn,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
-} from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BankEntity } from '../bank-registry/bank.entity';
+import { BaseEntity } from '../common/base.entity';
 import { UserEntity } from '../users/user.entity';
 
 @Entity()
-export class BankConnectionEntity implements BankConnection {
-  @PrimaryGeneratedColumn('uuid')
-  declare id: string;
-
+export class BankConnectionEntity extends BaseEntity implements BankConnection {
   @Column({ type: 'uuid' })
   declare userId: string;
 
@@ -37,12 +27,6 @@ export class BankConnectionEntity implements BankConnection {
 
   @Column({ type: 'uuid' })
   declare authDetailsUuid: string;
-
-  @CreateDateColumn()
-  declare createdAt: Date;
-
-  @UpdateDateColumn()
-  declare updatedAt: Date;
 
   @ManyToOne(() => UserEntity)
   @JoinColumn({ name: 'userId' })
