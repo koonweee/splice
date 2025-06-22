@@ -2,33 +2,33 @@ import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BankSourceType } from '@splice/api';
 import { Repository } from 'typeorm';
-import { BankRegistry } from './bank-registry.entity';
+import { BankEntity } from './bank-registry.entity';
 
 @Injectable()
 export class BankRegistryService implements OnModuleInit {
   private readonly logger = new Logger(BankRegistryService.name);
 
   constructor(
-    @InjectRepository(BankRegistry)
-    private bankRegistryRepository: Repository<BankRegistry>,
+    @InjectRepository(BankEntity)
+    private bankRegistryRepository: Repository<BankEntity>,
   ) {}
 
   async onModuleInit() {
     await this.seedBankRegistry();
   }
 
-  async findAllActive(): Promise<BankRegistry[]> {
+  async findAllActive(): Promise<BankEntity[]> {
     return this.bankRegistryRepository.find({
       where: { isActive: true },
       order: { name: 'ASC' },
     });
   }
 
-  async findById(id: string): Promise<BankRegistry | null> {
+  async findById(id: string): Promise<BankEntity | null> {
     return this.bankRegistryRepository.findOne({ where: { id } });
   }
 
-  async findByScraperIdentifier(scraperIdentifier: string): Promise<BankRegistry | null> {
+  async findByScraperIdentifier(scraperIdentifier: string): Promise<BankEntity | null> {
     return this.bankRegistryRepository.findOne({
       where: { scraperIdentifier, isActive: true },
     });

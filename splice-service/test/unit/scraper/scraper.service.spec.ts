@@ -3,9 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import type { Browser, Page } from 'playwright';
-import { BankConnection } from '../../../src/bank-connections/bank-connection.entity';
+import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
-import { BankRegistry } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank-registry.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 import { ScraperService } from '../../../src/scraper/scraper.service';
 import type { ScraperStrategy } from '../../../src/scraper/strategies/types';
@@ -29,7 +29,7 @@ describe('ScraperService', () => {
     scrape: jest.fn(),
   };
 
-  const mockBank: BankRegistry = {
+  const mockBank: BankEntity = {
     id: mockBankId,
     name: 'Test Bank',
     logoUrl: undefined,
@@ -40,7 +40,7 @@ describe('ScraperService', () => {
     updatedAt: new Date(),
   };
 
-  const mockBankConnection: BankConnection = {
+  const mockBankConnection: BankConnectionEntity = {
     id: mockConnectionId,
     userId: MOCK_USER_UUID,
     bankId: mockBankId,

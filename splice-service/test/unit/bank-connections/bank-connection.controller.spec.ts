@@ -2,9 +2,9 @@ import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
-import { BankConnection } from '../../../src/bank-connections/bank-connection.entity';
+import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
-import { BankRegistry } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank-registry.entity';
 import { MOCK_USER, MOCK_USER_UUID } from '../../mocks/mocks';
 
 describe('BankConnectionController', () => {
@@ -14,7 +14,7 @@ describe('BankConnectionController', () => {
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
 
-  const mockBank: BankRegistry = {
+  const mockBank: BankEntity = {
     id: mockBankId,
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
@@ -25,7 +25,7 @@ describe('BankConnectionController', () => {
     updatedAt: new Date(),
   };
 
-  const mockBankConnection: BankConnection = {
+  const mockBankConnection: BankConnectionEntity = {
     id: mockConnectionId,
     userId: MOCK_USER_UUID,
     bankId: mockBankId,

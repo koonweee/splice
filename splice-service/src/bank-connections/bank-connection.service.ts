@@ -3,17 +3,17 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BankConnectionStatus, CreateBankConnectionRequest, UpdateBankConnectionRequest } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
-import { BankConnection } from './bank-connection.entity';
+import { BankConnectionEntity } from './bank-connection.entity';
 
 @Injectable()
 export class BankConnectionService {
   constructor(
-    @InjectRepository(BankConnection)
-    private bankConnectionRepository: Repository<BankConnection>,
+    @InjectRepository(BankConnectionEntity)
+    private bankConnectionRepository: Repository<BankConnectionEntity>,
     private bankRegistryService: BankRegistryService,
   ) {}
 
-  async findByUserId(userId: string): Promise<BankConnection[]> {
+  async findByUserId(userId: string): Promise<BankConnectionEntity[]> {
     return this.bankConnectionRepository.find({
       where: { userId },
       relations: ['bank'],
@@ -21,14 +21,14 @@ export class BankConnectionService {
     });
   }
 
-  async findByUserIdAndConnectionId(userId: string, connectionId: string): Promise<BankConnection | null> {
+  async findByUserIdAndConnectionId(userId: string, connectionId: string): Promise<BankConnectionEntity | null> {
     return this.bankConnectionRepository.findOne({
       where: { id: connectionId, userId },
       relations: ['bank'],
     });
   }
 
-  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnection | null> {
+  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnectionEntity | null> {
     const bank = await this.bankRegistryService.findById(createRequest.bankId);
     if (!bank) {
       throw new NotFoundException('Bank not found');
@@ -58,7 +58,7 @@ export class BankConnectionService {
     userId: string,
     connectionId: string,
     updateRequest: UpdateBankConnectionRequest,
-  ): Promise<BankConnection | null> {
+  ): Promise<BankConnectionEntity | null> {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
       throw new NotFoundException('Bank connection not found');

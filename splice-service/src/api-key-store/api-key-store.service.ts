@@ -3,7 +3,7 @@ import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/co
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { ApiKeyStore, type ApiKeyType } from './api-key-store.entity';
+import { ApiKeyStoreEntity, type ApiKeyType } from './api-key-store.entity';
 
 @Injectable()
 export class ApiKeyStoreService {
@@ -11,8 +11,8 @@ export class ApiKeyStoreService {
   private readonly algorithm = 'aes-256-gcm';
 
   constructor(
-    @InjectRepository(ApiKeyStore)
-    private apiKeyStoreRepository: Repository<ApiKeyStore>,
+    @InjectRepository(ApiKeyStoreEntity)
+    private apiKeyStoreRepository: Repository<ApiKeyStoreEntity>,
     private configService: ConfigService,
   ) {
     const masterKey = this.configService.get<string>('apiStoreEncryptionKey');

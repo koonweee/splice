@@ -3,7 +3,7 @@ import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, Update
 
 @Entity()
 @Index(['userUuid', 'keyType'], { unique: true })
-export class ApiKeyStore {
+export class ApiKeyStoreEntity {
   @PrimaryGeneratedColumn('uuid')
   declare uuid: string;
 

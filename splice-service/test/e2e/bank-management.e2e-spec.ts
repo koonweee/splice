@@ -10,21 +10,21 @@ import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
 import { AuthModule } from '../../src/auth/auth.module';
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
-import { BankConnection } from '../../src/bank-connections/bank-connection.entity';
+import { BankConnectionEntity } from '../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
 import { BankRegistryController } from '../../src/bank-registry/bank-registry.controller';
-import { BankRegistry } from '../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../src/bank-registry/bank-registry.entity';
 import { BankRegistryService } from '../../src/bank-registry/bank-registry.service';
-import { User } from '../../src/users/user.entity';
+import { UserEntity } from '../../src/users/user.entity';
 import { UsersModule } from '../../src/users/users.module';
 
 describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let testUser: User;
-  let testBank: BankRegistry;
-  let testConnection: BankConnection;
+  let testUser: UserEntity;
+  let testBank: BankEntity;
+  let testConnection: BankConnectionEntity;
 
   beforeAll(async () => {
     // Create test data objects
@@ -356,7 +356,7 @@ describe('Bank Management (e2e)', () => {
           TypeOrmModule.forRoot({
             type: 'sqlite',
             database: ':memory:',
-            entities: [User],
+            entities: [UserEntity],
             synchronize: true,
           }),
           PassportModule,

@@ -3,21 +3,21 @@ import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BankConnectionStatus, BankSourceType } from '@splice/api';
 import type { Repository } from 'typeorm';
-import { BankConnection } from '../../../src/bank-connections/bank-connection.entity';
+import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
-import { BankRegistry } from '../../../src/bank-registry/bank-registry.entity';
+import { BankEntity } from '../../../src/bank-registry/bank-registry.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 import { MOCK_USER, MOCK_USER_UUID } from '../../mocks/mocks';
 
 describe('BankConnectionService', () => {
   let service: BankConnectionService;
-  let repository: jest.Mocked<Repository<BankConnection>>;
+  let repository: jest.Mocked<Repository<BankConnectionEntity>>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
 
-  const mockBank: BankRegistry = {
+  const mockBank: BankEntity = {
     id: mockBankId,
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
@@ -28,7 +28,7 @@ describe('BankConnectionService', () => {
     updatedAt: new Date(),
   };
 
-  const mockBankConnection: BankConnection = {
+  const mockBankConnection: BankConnectionEntity = {
     id: mockConnectionId,
     userId: MOCK_USER_UUID,
     bankId: mockBankId,
@@ -60,7 +60,7 @@ describe('BankConnectionService', () => {
       providers: [
         BankConnectionService,
         {
-          provide: getRepositoryToken(BankConnection),
+          provide: getRepositoryToken(BankConnectionEntity),
           useValue: mockRepository,
         },
         {
@@ -71,7 +71,7 @@ describe('BankConnectionService', () => {
     }).compile();
 
     service = module.get<BankConnectionService>(BankConnectionService);
-    repository = module.get(getRepositoryToken(BankConnection));
+    repository = module.get(getRepositoryToken(BankConnectionEntity));
     bankRegistryService = module.get(BankRegistryService);
   });
 

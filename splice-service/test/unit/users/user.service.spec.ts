@@ -2,12 +2,12 @@ import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
-import { User } from '../../../src/users/user.entity';
+import { UserEntity } from '../../../src/users/user.entity';
 import { UserService } from '../../../src/users/user.service';
 
 describe('UserService', () => {
   let service: UserService;
-  let repository: jest.Mocked<Repository<User>>;
+  let repository: jest.Mocked<Repository<UserEntity>>;
   let jwtService: jest.Mocked<JwtService>;
 
   const mockUser = {
@@ -36,7 +36,7 @@ describe('UserService', () => {
       providers: [
         UserService,
         {
-          provide: getRepositoryToken(User),
+          provide: getRepositoryToken(UserEntity),
           useValue: mockRepository,
         },
         {
@@ -47,7 +47,7 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
-    repository = module.get(getRepositoryToken(User));
+    repository = module.get(getRepositoryToken(UserEntity));
     jwtService = module.get(JwtService);
   });
 
