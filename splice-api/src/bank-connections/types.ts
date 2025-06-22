@@ -15,7 +15,7 @@ export interface BankConnection extends BaseInterface {
   alias?: string;
   lastSync?: Date;
   authDetailsUuid: string;
-  bank?: Bank;
+  bank: Bank;
 }
 
 export interface CreateBankConnectionRequest {
