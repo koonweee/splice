@@ -1,7 +1,8 @@
+import { User } from '@splice/api';
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
-export class UserEntity {
+export class UserEntity implements User {
   @PrimaryGeneratedColumn('uuid')
   declare uuid: string;
 

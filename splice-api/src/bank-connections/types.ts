@@ -1,25 +1,10 @@
-export enum BankSourceType {
-  SCRAPER = 'SCRAPER',
-  PLAID = 'PLAID',
-  SIMPLEFIN = 'SIMPLEFIN',
-}
+import type { Bank, BankSourceType } from '../banks';
 
 export enum BankConnectionStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
   ERROR = 'ERROR',
   PENDING_AUTH = 'PENDING_AUTH',
-}
-
-export interface BankRegistry {
-  id: string;
-  name: string;
-  logoUrl?: string;
-  sourceType: BankSourceType;
-  scraperIdentifier?: string;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface BankConnection {
@@ -32,7 +17,7 @@ export interface BankConnection {
   authDetailsUuid: string;
   createdAt: Date;
   updatedAt: Date;
-  bank?: BankRegistry;
+  bank?: Bank;
 }
 
 export interface CreateBankConnectionRequest {
@@ -57,11 +42,4 @@ export interface BankConnectionResponse {
   lastSync?: Date;
   createdAt: Date;
   updatedAt: Date;
-}
-
-export interface AvailableBankResponse {
-  id: string;
-  name: string;
-  logoUrl?: string;
-  sourceType: BankSourceType;
 }

@@ -1,8 +1,8 @@
-import { BankSourceType } from '@splice/api';
+import { Bank, BankSourceType } from '@splice/api';
 import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity()
-export class BankEntity {
+export class BankEntity implements Bank {
   @PrimaryGeneratedColumn('uuid')
   declare id: string;
 

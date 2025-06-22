@@ -1,4 +1,4 @@
-import { BankConnectionStatus } from '@splice/api';
+import { BankConnection, BankConnectionStatus } from '@splice/api';
 import {
   Column,
   CreateDateColumn,
@@ -12,7 +12,7 @@ import { BankEntity } from '../bank-registry/bank.entity';
 import { UserEntity } from '../users/user.entity';
 
 @Entity()
-export class BankConnectionEntity {
+export class BankConnectionEntity implements BankConnection {
   @PrimaryGeneratedColumn('uuid')
   declare id: string;
 
