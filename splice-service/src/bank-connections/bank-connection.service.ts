@@ -1,6 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { BankConnectionStatus, CreateBankConnectionRequest, UpdateBankConnectionRequest } from '@splice/api';
+import {
+  BankConnection,
+  BankConnectionStatus,
+  CreateBankConnectionRequest,
+  UpdateBankConnectionRequest,
+} from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { BankConnectionEntity } from './bank-connection.entity';
@@ -13,7 +18,7 @@ export class BankConnectionService {
     private bankRegistryService: BankRegistryService,
   ) {}
 
-  async findByUserId(userId: string): Promise<BankConnectionEntity[]> {
+  async findByUserId(userId: string): Promise<BankConnection[]> {
     return this.bankConnectionRepository.find({
       where: { userId },
       relations: ['bank'],
@@ -21,14 +26,14 @@ export class BankConnectionService {
     });
   }
 
-  async findByUserIdAndConnectionId(userId: string, connectionId: string): Promise<BankConnectionEntity | null> {
+  async findByUserIdAndConnectionId(userId: string, connectionId: string): Promise<BankConnection | null> {
     return this.bankConnectionRepository.findOne({
       where: { id: connectionId, userId },
       relations: ['bank'],
     });
   }
 
-  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnectionEntity | null> {
+  async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnection | null> {
     const bank = await this.bankRegistryService.findById(createRequest.bankId);
     if (!bank) {
       throw new NotFoundException('Bank not found');
@@ -58,7 +63,7 @@ export class BankConnectionService {
     userId: string,
     connectionId: string,
     updateRequest: UpdateBankConnectionRequest,
-  ): Promise<BankConnectionEntity | null> {
+  ): Promise<BankConnection | null> {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
       throw new NotFoundException('Bank connection not found');

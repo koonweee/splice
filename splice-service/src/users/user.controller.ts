@@ -1,8 +1,8 @@
 import { Body, Controller, ForbiddenException, Param, Post, Request, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import type { User } from '@splice/api';
 import { CreateUserDto, UserParamsDto } from './dto';
-import type { UserEntity } from './user.entity';
 import { UserService } from './user.service';
 
 @ApiTags('users')
@@ -14,7 +14,7 @@ export class UserController {
   @ApiOperation({ summary: 'Create a new user' })
   @ApiResponse({ status: 201, description: 'The user has been successfully created.' })
   @ApiResponse({ status: 400, description: 'Bad Request.' })
-  async create(@Body() createUserDto: CreateUserDto): Promise<{ user: UserEntity; apiKey: string }> {
+  async create(@Body() createUserDto: CreateUserDto): Promise<{ user: User; apiKey: string }> {
     return await this.userService.create(createUserDto.username, createUserDto.email);
   }
 
@@ -25,10 +25,7 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'API keys revoked successfully.' })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   @ApiResponse({ status: 403, description: 'Forbidden.' })
-  async revokeApiKeys(
-    @Param() params: UserParamsDto,
-    @Request() req: { user: UserEntity },
-  ): Promise<{ message: string }> {
+  async revokeApiKeys(@Param() params: UserParamsDto, @Request() req: { user: User }): Promise<{ message: string }> {
     if (req.user.id !== params.id) {
       throw new ForbiddenException('You can only revoke your own API keys');
     }
