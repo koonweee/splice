@@ -20,7 +20,7 @@ export class UserService {
     const savedUser = await this.userRepository.save(user);
 
     const apiKey = this.jwtService.sign({
-      sub: savedUser.uuid,
+      sub: savedUser.id,
       ver: savedUser.tokenVersion,
     });
 
@@ -31,15 +31,15 @@ export class UserService {
     return await this.userRepository.find();
   }
 
-  async findOne(uuid: string): Promise<UserEntity | null> {
-    return await this.userRepository.findOneBy({ uuid });
+  async findOne(id: string): Promise<UserEntity | null> {
+    return await this.userRepository.findOneBy({ id });
   }
 
   async findByUsername(username: string): Promise<UserEntity | null> {
     return await this.userRepository.findOneBy({ username });
   }
 
-  async revokeAllApiKeys(uuid: string): Promise<void> {
-    await this.userRepository.increment({ uuid }, 'tokenVersion', 1);
+  async revokeAllApiKeys(id: string): Promise<void> {
+    await this.userRepository.increment({ id }, 'tokenVersion', 1);
   }
 }

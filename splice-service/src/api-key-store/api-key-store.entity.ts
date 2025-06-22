@@ -3,13 +3,10 @@ import { Column, Entity, Index } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 
 @Entity()
-@Index(['userUuid', 'keyType'], { unique: true })
+@Index(['userId', 'keyType'], { unique: true })
 export class ApiKeyStoreEntity extends BaseEntity implements ApiKeyStore {
   @Column({ type: 'uuid' })
-  declare uuid: string;
-
-  @Column({ type: 'uuid' })
-  declare userUuid: string;
+  declare userId: string;
 
   @Column({
     type: 'enum',

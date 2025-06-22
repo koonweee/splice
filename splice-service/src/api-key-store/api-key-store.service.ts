@@ -23,18 +23,18 @@ export class ApiKeyStoreService {
   }
 
   // Derive a unique encryption key for each user
-  private deriveUserKey(userUuid: string): Buffer {
+  private deriveUserKey(userId: string): Buffer {
     return crypto.pbkdf2Sync(
       this.masterKey,
-      userUuid,
+      userId,
       100000, // iterations
       32, // key length
       'sha256',
     );
   }
 
-  private encrypt(text: string, userUuid: string): { encryptedData: string; secret: string } {
-    const userKey = this.deriveUserKey(userUuid);
+  private encrypt(text: string, userId: string): { encryptedData: string; secret: string } {
+    const userKey = this.deriveUserKey(userId);
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv(this.algorithm, userKey, iv);
 
@@ -47,8 +47,8 @@ export class ApiKeyStoreService {
     return { encryptedData, secret };
   }
 
-  private decrypt(encryptedData: string, secret: string, userUuid: string): string {
-    const userKey = this.deriveUserKey(userUuid);
+  private decrypt(encryptedData: string, secret: string, userId: string): string {
+    const userKey = this.deriveUserKey(userId);
     const secretBuffer = Buffer.from(secret, 'hex');
     const iv = secretBuffer.subarray(0, 16);
     const authTag = secretBuffer.subarray(16);
@@ -65,11 +65,11 @@ export class ApiKeyStoreService {
     }
   }
 
-  async storeApiKey(userUuid: string, apiKey: string, keyType: ApiKeyType): Promise<string> {
-    const { encryptedData, secret } = this.encrypt(apiKey, userUuid);
+  async storeApiKey(userId: string, apiKey: string, keyType: ApiKeyType): Promise<string> {
+    const { encryptedData, secret } = this.encrypt(apiKey, userId);
 
     const apiKeyStore = this.apiKeyStoreRepository.create({
-      userUuid,
+      userId,
       keyType,
       encryptedKey: encryptedData,
     });
@@ -78,10 +78,10 @@ export class ApiKeyStoreService {
     return secret;
   }
 
-  async retrieveApiKey(userUuid: string, keyType: ApiKeyType, secret: string): Promise<string> {
+  async retrieveApiKey(userId: string, keyType: ApiKeyType, secret: string): Promise<string> {
     const storedKey = await this.apiKeyStoreRepository.findOne({
       where: {
-        userUuid,
+        userId,
         keyType,
       },
     });
@@ -90,6 +90,6 @@ export class ApiKeyStoreService {
       throw new NotFoundException('API key not found');
     }
 
-    return this.decrypt(storedKey.encryptedKey, secret, userUuid);
+    return this.decrypt(storedKey.encryptedKey, secret, userId);
   }
 }

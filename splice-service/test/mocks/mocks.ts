@@ -1,9 +1,8 @@
-import { UserEntity } from '../../src/users/user.entity';
+import { User } from '@splice/api';
 
-export const MOCK_USER_UUID = 'test-user-id';
-export const MOCK_USER: UserEntity = {
-  id: 'test-id',
-  uuid: MOCK_USER_UUID,
+export const MOCK_USER_ID = 'test-user-id';
+export const MOCK_USER: User = {
+  id: MOCK_USER_ID,
   username: 'testuser',
   email: '',
   tokenVersion: 1,

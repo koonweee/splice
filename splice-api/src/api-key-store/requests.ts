@@ -5,7 +5,7 @@ export interface CreateApiKeyRequest {
 }
 
 export interface CreateApiKeyParams {
-  userUuid: string;
+  userId: string;
 }
 
 export interface CreateApiKeyHeaders {

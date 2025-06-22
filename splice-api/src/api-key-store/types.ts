@@ -5,8 +5,7 @@ export enum ApiKeyType {
 }
 
 export interface ApiKeyStore extends BaseInterface {
-  uuid: string;
-  userUuid: string;
+  userId: string;
   keyType: ApiKeyType;
   encryptedKey: string;
 }

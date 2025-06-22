@@ -10,7 +10,7 @@ describe('ApiKeyStoreService', () => {
   let service: ApiKeyStoreService;
   let repository: jest.Mocked<Repository<ApiKeyStoreEntity>>;
 
-  const mockUserUuid = 'test-user-uuid-123';
+  const mockUserId = 'test-user-id-123';
   const mockApiKey = 'test-api-key-value';
   const mockEncryptionKey = 'test-master-key-32-bytes-long!!';
 
@@ -56,8 +56,7 @@ describe('ApiKeyStoreService', () => {
     it('should encrypt and store API key successfully', async () => {
       const mockApiKeyStore = {
         id: 'test-id',
-        uuid: 'test-uuid',
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
         createdAt: new Date(),
@@ -66,10 +65,10 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
 
       expect(repository.create).toHaveBeenCalledWith({
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: expect.any(String),
       });
@@ -82,8 +81,7 @@ describe('ApiKeyStoreService', () => {
     it('should generate different secrets for the same API key', async () => {
       const mockApiKeyStore = {
         id: 'test-id',
-        uuid: 'test-uuid',
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
         createdAt: new Date(),
@@ -92,8 +90,8 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret1 = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
-      const secret2 = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret1 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret2 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
 
       expect(secret1).not.toBe(secret2);
     });
@@ -104,8 +102,7 @@ describe('ApiKeyStoreService', () => {
       // First store an API key to get a valid secret
       const mockApiKeyStore = {
         id: 'test-id',
-        uuid: 'test-uuid',
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
         createdAt: new Date(),
@@ -114,7 +111,7 @@ describe('ApiKeyStoreService', () => {
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(mockUserUuid, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
 
       // Get the encrypted data from the create call
       const createCall = repository.create.mock.calls[0][0];
@@ -123,19 +120,18 @@ describe('ApiKeyStoreService', () => {
       // Mock the repository to return the stored data
       repository.findOne.mockResolvedValue({
         id: 'test-id',
-        uuid: 'test-uuid',
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      const retrievedApiKey = await service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, secret);
+      const retrievedApiKey = await service.retrieveApiKey(mockUserId, ApiKeyType.BITWARDEN, secret);
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: {
-          userUuid: mockUserUuid,
+          userId: mockUserId,
           keyType: ApiKeyType.BITWARDEN,
         },
       });
@@ -145,7 +141,7 @@ describe('ApiKeyStoreService', () => {
     it('should throw NotFoundException when API key is not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, 'invalid-secret')).rejects.toThrow(
+      await expect(service.retrieveApiKey(mockUserId, ApiKeyType.BITWARDEN, 'invalid-secret')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -153,8 +149,7 @@ describe('ApiKeyStoreService', () => {
     it('should throw UnauthorizedException for invalid secret', async () => {
       repository.findOne.mockResolvedValue({
         id: 'test-id',
-        uuid: 'test-uuid',
-        userUuid: mockUserUuid,
+        userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'some-encrypted-data',
         createdAt: new Date(),
@@ -162,7 +157,7 @@ describe('ApiKeyStoreService', () => {
       });
 
       await expect(
-        service.retrieveApiKey(mockUserUuid, ApiKeyType.BITWARDEN, '1234567890abcdef1234567890abcdef12345678'),
+        service.retrieveApiKey(mockUserId, ApiKeyType.BITWARDEN, '1234567890abcdef1234567890abcdef12345678'),
       ).rejects.toThrow();
     });
   });
