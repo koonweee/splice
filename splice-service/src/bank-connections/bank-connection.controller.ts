@@ -12,14 +12,10 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { BankConnectionResponse, BankConnectionStatus } from '@splice/api';
+import { BankConnectionResponse, BankConnectionStatus, User } from '@splice/api';
+import { AuthenticatedUser } from '../common/decorators';
 import { BankConnectionService } from './bank-connection.service';
-import {
-  BankConnectionByIdParamsDto,
-  BankConnectionParamsDto,
-  CreateBankConnectionDto,
-  UpdateBankConnectionDto,
-} from './dto';
+import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnectionDto } from './dto';
 
 @ApiTags('bank-connections')
 @Controller('users/:userId/banks')
@@ -32,8 +28,8 @@ export class BankConnectionController {
   @ApiOperation({ summary: 'Get all bank connections for a user' })
   @ApiResponse({ status: 200, description: 'List of bank connections' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getUserBankConnections(@Param() params: BankConnectionParamsDto): Promise<BankConnectionResponse[]> {
-    const connections = await this.bankConnectionService.findByUserId(params.userId);
+  async getUserBankConnections(@AuthenticatedUser() user: User): Promise<BankConnectionResponse[]> {
+    const connections = await this.bankConnectionService.findByUserId(user.id);
 
     return connections.map((connection) => ({
       id: connection.id,
