@@ -1,6 +1,7 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { apiReference } from '@scalar/nestjs-api-reference';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -24,7 +25,14 @@ async function bootstrap() {
     .addBearerAuth()
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+
+  // Scalar reference https://guides.scalar.com/scalar/scalar-api-references/integrations/nestjs (like swagger)
+  app.use(
+    '/api',
+    apiReference({
+      content: document,
+    }),
+  );
 
   await app.listen(3000);
 }
