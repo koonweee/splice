@@ -105,9 +105,9 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       throw new HttpException('Bank connection not found', HttpStatus.NOT_FOUND);
     }
 
-    if (connection.status !== BankConnectionStatus.ACTIVE) {
-      throw new HttpException('Bank connection is not active', HttpStatus.BAD_REQUEST);
-    }
+    // if (connection.status !== BankConnectionStatus.ACTIVE) {
+    //   throw new HttpException('Bank connection is not active', HttpStatus.BAD_REQUEST);
+    // }
 
     // Get the bank from registry
     const bank = connection.bank;

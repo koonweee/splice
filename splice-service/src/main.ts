@@ -34,6 +34,14 @@ async function bootstrap() {
     }),
   );
 
+  // Enable CORS
+  app.enableCors({
+    origin: 'http://localhost:4000', // The origin of your Next.js frontend
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    exposedHeaders: ['X-Secret'], // Allow frontend to access custom headers
+  });
+
   await app.listen(3000);
 }
 bootstrap();
