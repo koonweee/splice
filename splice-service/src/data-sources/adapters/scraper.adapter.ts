@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
+import { z } from 'zod';
 import { ScraperService } from '../../scraper/scraper.service';
 
 interface DBSAccountData {
@@ -15,6 +16,12 @@ interface DBSAccountData {
   type: 'savings_or_checking' | 'credit_card';
 }
 
+// Zod schema for scraper connection finalization payload
+const ScraperFinalizeConnectionSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
 @Injectable()
 export class ScraperAdapter implements DataSourceAdapter {
   private readonly logger = new Logger(ScraperAdapter.name);
@@ -27,29 +34,21 @@ export class ScraperAdapter implements DataSourceAdapter {
     return undefined;
   }
 
-  async getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }> {
-    this.logger.log(`Checking health status for scraper connection ${connection.id}`);
+  async validateFinalizeConnectionPayload(payload?: object): Promise<void> {
+    this.logger.log(`Validating finalize connection payload for scraper connection`);
 
     try {
-      // Check if we can retrieve the secret from vault
-      // We need an access token for this, but for health check we can just verify the connection exists
-      if (!connection.authDetailsUuid) {
-        return {
-          healthy: false,
-          error: 'Missing authentication details UUID',
-        };
-      }
-
-      // For now, assume healthy if connection has required fields
-      // In the future, we could do a lightweight test of the scraper strategy
-      return { healthy: true };
+      // Use Zod to validate the payload structure
+      ScraperFinalizeConnectionSchema.parse(payload);
+      this.logger.log('Scraper connection payload validation successful');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      this.logger.error(`Health check failed for connection ${connection.id}: ${errorMessage}`);
-      return {
-        healthy: false,
-        error: errorMessage,
-      };
+      if (error instanceof z.ZodError) {
+        const errorMessages = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
+        this.logger.error(`Scraper connection payload validation failed: ${errorMessages}`);
+        throw new Error(`Validation failed: ${errorMessages}`);
+      }
+      // Re-throw unexpected errors
+      throw error;
     }
   }
 

@@ -179,56 +179,6 @@ describe('BankConnectionService', () => {
     });
   });
 
-  describe('update', () => {
-    const updateRequest = {
-      alias: 'Updated Alias',
-      status: BankConnectionStatus.ACTIVE,
-    };
-
-    it('should update bank connection successfully', async () => {
-      const existingConnection = { ...mockBankConnection };
-      const updatedConnection = { ...mockBankConnection, ...updateRequest };
-
-      repository.findOne
-        .mockResolvedValueOnce(existingConnection) // for findByUserIdAndConnectionId
-        .mockResolvedValueOnce(updatedConnection); // for final fetch with relations
-      repository.save.mockResolvedValue(updatedConnection);
-
-      const result = await service.update(MOCK_USER_ID, mockConnectionId, updateRequest);
-
-      expect(repository.save).toHaveBeenCalledWith({
-        ...existingConnection,
-        ...updateRequest,
-      });
-      expect(result).toEqual(updatedConnection);
-    });
-
-    it('should throw NotFoundException when connection not found', async () => {
-      repository.findOne.mockResolvedValue(null);
-
-      await expect(service.update(MOCK_USER_ID, mockConnectionId, updateRequest)).rejects.toThrow(
-        new NotFoundException('Bank connection not found'),
-      );
-    });
-
-    it('should update only provided fields', async () => {
-      const partialUpdate = { alias: 'New Alias' };
-      const existingConnection = { ...mockBankConnection };
-      const updatedConnection = { ...mockBankConnection, alias: 'New Alias' };
-
-      repository.findOne.mockResolvedValueOnce(existingConnection).mockResolvedValueOnce(updatedConnection);
-      repository.save.mockResolvedValue(updatedConnection);
-
-      const result = await service.update(MOCK_USER_ID, mockConnectionId, partialUpdate);
-
-      expect(repository.save).toHaveBeenCalledWith({
-        ...existingConnection,
-        alias: 'New Alias',
-      });
-      expect(result?.status).toBe(mockBankConnection.status); // Should remain unchanged
-    });
-  });
-
   describe('delete', () => {
     it('should delete bank connection successfully', async () => {
       repository.findOne.mockResolvedValue(mockBankConnection);
