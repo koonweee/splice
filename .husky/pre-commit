@@ -1,1 +1,1 @@
-bun run --filter '!splice-web' lint
+bun run lint
