@@ -34,6 +34,11 @@ export interface DataSourceAdapter<InitiateConnectionResponse = undefined> {
    * "setup step" that returns a payload containing data needed to start the login process (ie. link token for Plaid to initiate OAuth flow)
    */
   initiateConnection(userId: string): Promise<InitiateConnectionResponse>;
+  /**
+   * Function to validate payload when connection is finalized
+   * eg. for plaid, validate that the payload contains an access token
+   */
+  validateFinalizeConnectionPayload(payload?: object): Promise<void>;
   fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]>;
   fetchTransactions(
     connection: BankConnection,
