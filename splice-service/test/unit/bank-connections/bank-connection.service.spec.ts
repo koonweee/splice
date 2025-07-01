@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { Logger, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
@@ -7,6 +7,7 @@ import { BankConnectionEntity } from '../../../src/bank-connections/bank-connect
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 import { DataSourceManager } from '../../../src/data-sources/manager/data-source-manager.service';
+import { VaultService } from '../../../src/vault/vault.service';
 import { MOCK_USER_ID } from '../../mocks/mocks';
 
 describe('BankConnectionService', () => {
@@ -74,6 +75,19 @@ describe('BankConnectionService', () => {
         {
           provide: DataSourceManager,
           useValue: mockDataSourceManager,
+        },
+        {
+          provide: VaultService,
+          useValue: {
+            createSecret: jest.fn(),
+          },
+        },
+        {
+          provide: Logger,
+          useValue: {
+            log: jest.fn(),
+            error: jest.fn(),
+          },
         },
       ],
     }).compile();
