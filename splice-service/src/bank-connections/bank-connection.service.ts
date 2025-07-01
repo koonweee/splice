@@ -5,7 +5,6 @@ import {
   BankConnectionStatus,
   CreateBankConnectionRequest,
   StandardizedTransaction,
-  UpdateBankConnectionRequest,
 } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';

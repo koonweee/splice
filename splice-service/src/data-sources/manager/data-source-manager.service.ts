@@ -14,28 +14,13 @@ export class DataSourceManager {
 
   constructor(
     @Inject(DATA_SOURCE_ADAPTERS)
-    private readonly adapters: Map<DataSourceType, DataSourceAdapter<{}, {}>>,
+    private readonly adapters: Map<DataSourceType, DataSourceAdapter>,
   ) {}
 
-  async initiateConnection(userId: string, sourceType: DataSourceType): Promise<DataSourceAdapter<{}, {}>> {
+  async initiateConnection(userId: string, sourceType: DataSourceType): Promise<object | undefined> {
     const adapter = this.getAdapter(sourceType);
     this.logger.log(`Initiating connection for user ${userId} with source type ${sourceType}`);
     return adapter.initiateConnection(userId);
-  }
-
-  async finalizeConnection(
-    sourceType: DataSourceType,
-    connectionData: object,
-  ): Promise<{ authDetailsUuid: string; metadata: object }> {
-    const adapter = this.getAdapter(sourceType);
-    this.logger.log(`Finalizing connection with source type ${sourceType}`);
-    return adapter.finalizeConnection(connectionData);
-  }
-
-  async getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }> {
-    const adapter = this.getAdapter(connection.bank.sourceType);
-    this.logger.log(`Checking health status for connection ${connection.id}`);
-    return adapter.getHealthStatus(connection);
   }
 
   async fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]> {
@@ -56,7 +41,7 @@ export class DataSourceManager {
     return adapter.fetchTransactions(connection, accountId, startDate, endDate, vaultAccessToken);
   }
 
-  private getAdapter(sourceType: DataSourceType): DataSourceAdapter<{}, {}> {
+  private getAdapter(sourceType: DataSourceType): DataSourceAdapter {
     const adapter = this.adapters.get(sourceType);
     if (!adapter) {
       throw new Error(`No adapter registered for source type: ${sourceType}`);

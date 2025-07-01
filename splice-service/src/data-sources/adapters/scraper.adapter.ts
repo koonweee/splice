@@ -1,14 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  BankConnection,
-  BankConnectionStatus,
-  DataSourceAdapter,
-  StandardizedAccount,
-  StandardizedTransaction,
-} from '@splice/api';
-import { BankConnectionService } from '../../bank-connections/bank-connection.service';
+import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
 import { ScraperService } from '../../scraper/scraper.service';
-import { VaultService } from '../../vault/vault.service';
 
 interface DBSAccountData {
   transactions: Array<{
@@ -23,56 +15,16 @@ interface DBSAccountData {
   type: 'savings_or_checking' | 'credit_card';
 }
 
-// biome-ignore lint/complexity/noBannedTypes: <Scraper does not require any additional data to initiate the login process>
-type ScraperInitiateConnectionPayload = {};
-type ScraperFinalizeConnectionPayload = {
-  username: string;
-  password: string;
-};
-
 @Injectable()
-export class ScraperAdapter
-  implements DataSourceAdapter<ScraperInitiateConnectionPayload, ScraperFinalizeConnectionPayload>
-{
+export class ScraperAdapter implements DataSourceAdapter {
   private readonly logger = new Logger(ScraperAdapter.name);
 
-  constructor(
-    private readonly scraperService: ScraperService,
-    private readonly vaultService: VaultService,
-    private readonly bankConnectionService: BankConnectionService,
-  ) {}
+  constructor(private readonly scraperService: ScraperService) {}
 
   async initiateConnection(userId: string) {
     this.logger.log(`Initiating scraper connection for user ${userId}`);
     // For scrapers, no setup required so this returns immediately
-    return {};
-  }
-
-  async finalizeConnection(
-    connection: BankConnection,
-    connectionData: ScraperFinalizeConnectionPayload,
-    vaultAccessToken: string,
-    vaultOrganizationId: string,
-  ): Promise<void> {
-    this.logger.log('Finalizing scraper connection');
-
-    // Attempt to store the credentials in vault
-    const authDetailsUuid = await this.vaultService.createSecret(
-      connection.id,
-      connectionData,
-      vaultAccessToken,
-      vaultOrganizationId,
-    );
-
-    this.logger.log(`Created vault secret for scraper connection ${connection.id} with uuid ${authDetailsUuid}`);
-
-    // Set the auth details uuid on the connection
-    await this.bankConnectionService.updateAuthDetailsUuid(connection.id, authDetailsUuid);
-
-    // Set the connection status to ACTIVE
-    await this.bankConnectionService.updateStatus(connection.id, BankConnectionStatus.ACTIVE);
-
-    this.logger.log(`Finalized scraper connection ${connection.id}`);
+    return undefined;
   }
 
   async getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }> {
