@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BankConnection, DataSourceType } from '@splice/api';
+import { BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
 import { ScraperAdapter } from '../../../../src/data-sources/adapters/scraper.adapter';
 import { ScraperService } from '../../../../src/scraper/scraper.service';
 
@@ -14,7 +14,7 @@ describe('ScraperAdapter', () => {
     id: mockConnectionId,
     userId: mockUserId,
     bankId: 'bank-789',
-    status: 'ACTIVE' as const,
+    status: BankConnectionStatus.ACTIVE,
     authDetailsUuid: 'auth-uuid-123',
     createdAt: new Date(),
     updatedAt: new Date(),
