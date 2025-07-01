@@ -4,5 +4,4 @@ export * from './banks';
 export * from './common';
 export * from './data-sources';
 export * from './scraper';
-export * from './transactions';
 export * from './users';
