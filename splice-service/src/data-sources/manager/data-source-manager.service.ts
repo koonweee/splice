@@ -14,13 +14,10 @@ export class DataSourceManager {
 
   constructor(
     @Inject(DATA_SOURCE_ADAPTERS)
-    private readonly adapters: Map<DataSourceType, DataSourceAdapter>,
+    private readonly adapters: Map<DataSourceType, DataSourceAdapter<{}, {}>>,
   ) {}
 
-  async initiateConnection(
-    userId: string,
-    sourceType: DataSourceType,
-  ): Promise<{ linkToken?: string; status: 'ready' | 'redirect' }> {
+  async initiateConnection(userId: string, sourceType: DataSourceType): Promise<DataSourceAdapter<{}, {}>> {
     const adapter = this.getAdapter(sourceType);
     this.logger.log(`Initiating connection for user ${userId} with source type ${sourceType}`);
     return adapter.initiateConnection(userId);
@@ -59,7 +56,7 @@ export class DataSourceManager {
     return adapter.fetchTransactions(connection, accountId, startDate, endDate, vaultAccessToken);
   }
 
-  private getAdapter(sourceType: DataSourceType): DataSourceAdapter {
+  private getAdapter(sourceType: DataSourceType): DataSourceAdapter<{}, {}> {
     const adapter = this.adapters.get(sourceType);
     if (!adapter) {
       throw new Error(`No adapter registered for source type: ${sourceType}`);

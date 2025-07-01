@@ -13,8 +13,8 @@ import { DataSourceManager } from './manager/data-source-manager.service';
     ScraperAdapter,
     {
       provide: DATA_SOURCE_ADAPTERS,
-      useFactory: (scraperAdapter: ScraperAdapter): Map<DataSourceType, DataSourceAdapter> => {
-        const adapters = new Map<DataSourceType, DataSourceAdapter>();
+      useFactory: (scraperAdapter: ScraperAdapter): Map<DataSourceType, DataSourceAdapter<{}, {}>> => {
+        const adapters = new Map<DataSourceType, DataSourceAdapter<{}, {}>>();
         adapters.set(DataSourceType.SCRAPER, scraperAdapter);
         return adapters;
       },
@@ -28,7 +28,7 @@ export class DataSourcesModule implements OnModuleInit {
 
   constructor(
     @Inject(DATA_SOURCE_ADAPTERS)
-    private adapters: Map<DataSourceType, DataSourceAdapter>,
+    private adapters: Map<DataSourceType, DataSourceAdapter<{}, {}>>,
   ) {}
 
   onModuleInit() {

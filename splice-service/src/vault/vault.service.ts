@@ -38,7 +38,7 @@ export class VaultService {
    * @param value The value object for the secret (will be JSON stringified)
    * @param accessToken The Bitwarden access token
    * @param organizationId The organization ID where the secret will be created
-   * @returns The created secret response
+   * @returns The created secret uuid
    */
   async createSecret(key: string, value: object, accessToken: string, organizationId: string): Promise<string> {
     try {
