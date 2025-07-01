@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import { BankConnection, DataSourceType } from '@splice/api';
+import { BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
 import { ScraperAdapter } from '../../../../src/data-sources/adapters/scraper.adapter';
 import { ScraperService } from '../../../../src/scraper/scraper.service';
 
@@ -14,7 +14,7 @@ describe('ScraperAdapter', () => {
     id: mockConnectionId,
     userId: mockUserId,
     bankId: 'bank-789',
-    status: 'ACTIVE' as any,
+    status: BankConnectionStatus.ACTIVE,
     authDetailsUuid: 'auth-uuid-123',
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -102,12 +102,10 @@ describe('ScraperAdapter', () => {
   });
 
   describe('initiateConnection', () => {
-    it('should return ready status for scraper connections', async () => {
+    it('should return undefined for scraper connections', async () => {
       const result = await adapter.initiateConnection(mockUserId);
 
-      expect(result).toEqual({
-        status: 'ready',
-      });
+      expect(result).toBeUndefined();
     });
 
     it('should log the initiation', async () => {
@@ -119,67 +117,101 @@ describe('ScraperAdapter', () => {
     });
   });
 
-  describe('finalizeConnection', () => {
-    it('should finalize connection with valid authDetailsUuid', async () => {
-      const connectionData = { authDetailsUuid: 'auth-uuid-456' };
-
-      const result = await adapter.finalizeConnection(connectionData);
-
-      expect(result).toEqual({
-        authDetailsUuid: 'auth-uuid-456',
-        metadata: {
-          sourceType: 'SCRAPER',
-          connectionType: 'credential-based',
-        },
-      });
-    });
-
-    it('should throw error when authDetailsUuid is missing', async () => {
-      const connectionData = {};
-
-      await expect(adapter.finalizeConnection(connectionData)).rejects.toThrow(
-        'authDetailsUuid is required for scraper connections',
-      );
-    });
-
-    it('should throw error when authDetailsUuid is null', async () => {
-      const connectionData = { authDetailsUuid: null };
-
-      await expect(adapter.finalizeConnection(connectionData)).rejects.toThrow(
-        'authDetailsUuid is required for scraper connections',
-      );
-    });
-  });
-
-  describe('getHealthStatus', () => {
-    it('should return healthy status when connection has authDetailsUuid', async () => {
-      const result = await adapter.getHealthStatus(mockBankConnection);
-
-      expect(result).toEqual({
-        healthy: true,
-      });
-    });
-
-    it('should return unhealthy status when authDetailsUuid is missing', async () => {
-      const connectionWithoutAuth = {
-        ...mockBankConnection,
-        authDetailsUuid: undefined,
+  describe('validateFinalizeConnectionPayload', () => {
+    it('should validate payload with valid username and password', async () => {
+      const validPayload = {
+        username: 'testuser',
+        password: 'testpass123',
       };
 
-      const result = await adapter.getHealthStatus(connectionWithoutAuth as any);
-
-      expect(result).toEqual({
-        healthy: false,
-        error: 'Missing authentication details UUID',
-      });
+      await expect(adapter.validateFinalizeConnectionPayload(validPayload)).resolves.not.toThrow();
     });
 
-    it('should log health check operations', async () => {
+    it('should throw error when username is missing', async () => {
+      const invalidPayload = {
+        password: 'testpass123',
+      };
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow(
+        'Validation failed: username: Required',
+      );
+    });
+
+    it('should throw error when password is missing', async () => {
+      const invalidPayload = {
+        username: 'testuser',
+      };
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow(
+        'Validation failed: password: Required',
+      );
+    });
+
+    it('should throw error when username is empty string', async () => {
+      const invalidPayload = {
+        username: '',
+        password: 'testpass123',
+      };
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow(
+        'Validation failed: username: Username is required',
+      );
+    });
+
+    it('should throw error when password is empty string', async () => {
+      const invalidPayload = {
+        username: 'testuser',
+        password: '',
+      };
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow(
+        'Validation failed: password: Password is required',
+      );
+    });
+
+    it('should throw error when payload is undefined', async () => {
+      await expect(adapter.validateFinalizeConnectionPayload(undefined)).rejects.toThrow('Validation failed');
+    });
+
+    it('should throw error when payload is null', async () => {
+      await expect(adapter.validateFinalizeConnectionPayload(null as unknown as object)).rejects.toThrow(
+        'Validation failed',
+      );
+    });
+
+    it('should throw error when both username and password are missing', async () => {
+      const invalidPayload = {};
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow(
+        'Validation failed: username: Required, password: Required',
+      );
+    });
+
+    it('should log validation success for valid payload', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
+      const validPayload = {
+        username: 'testuser',
+        password: 'testpass123',
+      };
 
-      await adapter.getHealthStatus(mockBankConnection);
+      await adapter.validateFinalizeConnectionPayload(validPayload);
 
-      expect(logSpy).toHaveBeenCalledWith(`Checking health status for scraper connection ${mockConnectionId}`);
+      expect(logSpy).toHaveBeenCalledWith('Validating finalize connection payload for scraper connection');
+      expect(logSpy).toHaveBeenCalledWith('Scraper connection payload validation successful');
+    });
+
+    it('should log validation errors for invalid payload', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      const invalidPayload = {
+        username: '',
+        password: '',
+      };
+
+      await expect(adapter.validateFinalizeConnectionPayload(invalidPayload)).rejects.toThrow();
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        'Scraper connection payload validation failed: username: Username is required, password: Password is required',
+      );
     });
   });
 

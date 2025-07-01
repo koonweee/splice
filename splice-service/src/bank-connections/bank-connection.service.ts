@@ -5,7 +5,6 @@ import {
   BankConnectionStatus,
   CreateBankConnectionRequest,
   StandardizedTransaction,
-  UpdateBankConnectionRequest,
 } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
@@ -62,32 +61,6 @@ export class BankConnectionService {
     });
   }
 
-  async update(
-    userId: string,
-    connectionId: string,
-    updateRequest: UpdateBankConnectionRequest,
-  ): Promise<BankConnection | null> {
-    const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
-    if (!connection) {
-      throw new NotFoundException('Bank connection not found');
-    }
-
-    if (updateRequest.alias !== undefined) {
-      connection.alias = updateRequest.alias;
-    }
-
-    if (updateRequest.status !== undefined) {
-      connection.status = updateRequest.status;
-    }
-
-    const savedConnection = await this.bankConnectionRepository.save(connection);
-
-    return this.bankConnectionRepository.findOne({
-      where: { id: savedConnection.id },
-      relations: ['bank'],
-    });
-  }
-
   async delete(userId: string, connectionId: string): Promise<void> {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
@@ -105,6 +78,10 @@ export class BankConnectionService {
 
   async updateStatus(connectionId: string, status: BankConnectionStatus): Promise<void> {
     await this.bankConnectionRepository.update(connectionId, { status });
+  }
+
+  async updateAuthDetailsUuid(connectionId: string, authDetailsUuid: string): Promise<void> {
+    await this.bankConnectionRepository.update(connectionId, { authDetailsUuid });
   }
 
   async getTransactions(

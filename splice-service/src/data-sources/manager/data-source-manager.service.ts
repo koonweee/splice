@@ -17,28 +17,10 @@ export class DataSourceManager {
     private readonly adapters: Map<DataSourceType, DataSourceAdapter>,
   ) {}
 
-  async initiateConnection(
-    userId: string,
-    sourceType: DataSourceType,
-  ): Promise<{ linkToken?: string; status: 'ready' | 'redirect' }> {
+  async initiateConnection(userId: string, sourceType: DataSourceType): Promise<object | undefined> {
     const adapter = this.getAdapter(sourceType);
     this.logger.log(`Initiating connection for user ${userId} with source type ${sourceType}`);
     return adapter.initiateConnection(userId);
-  }
-
-  async finalizeConnection(
-    sourceType: DataSourceType,
-    connectionData: object,
-  ): Promise<{ authDetailsUuid: string; metadata: object }> {
-    const adapter = this.getAdapter(sourceType);
-    this.logger.log(`Finalizing connection with source type ${sourceType}`);
-    return adapter.finalizeConnection(connectionData);
-  }
-
-  async getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }> {
-    const adapter = this.getAdapter(connection.bank.sourceType);
-    this.logger.log(`Checking health status for connection ${connection.id}`);
-    return adapter.getHealthStatus(connection);
   }
 
   async fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]> {

@@ -2,7 +2,7 @@ import type { ExecutionContext, INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
-import { ApiKeyType, BankConnection, BankConnectionStatus, User } from '@splice/api';
+import { ApiKeyType, BankConnection, User } from '@splice/api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -327,7 +327,7 @@ describe('DTO Validation (e2e)', () => {
   });
 
   describe('BankConnectionController Validation', () => {
-    const validConnectionId = uuidv4();
+    const _validConnectionId = uuidv4();
 
     describe('POST /users/banks', () => {
       it('should accept valid bank connection creation data', async () => {
@@ -364,39 +364,6 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer()).post('/users/banks').send(invalidData).expect(400);
 
         expect(bankConnectionService.create).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('PUT /users/banks/:connectionId', () => {
-      it('should accept valid bank connection update data', async () => {
-        const validData = {
-          alias: 'Updated Bank Account',
-          status: BankConnectionStatus.ACTIVE,
-        };
-
-        bankConnectionService.update.mockResolvedValue(null as unknown as BankConnection);
-
-        await request(app.getHttpServer()).put(`/users/banks/${validConnectionId}`).send(validData).expect(404); // Service returns null, controller throws NotFoundException
-      });
-
-      it('should reject request with invalid connectionId parameter', async () => {
-        const validData = {
-          alias: 'Updated Bank Account',
-        };
-
-        await request(app.getHttpServer()).put('/users/banks/invalid-uuid').send(validData).expect(400);
-
-        expect(bankConnectionService.update).not.toHaveBeenCalled();
-      });
-
-      it('should reject request with invalid status enum', async () => {
-        const invalidData = {
-          status: 'INVALID_STATUS',
-        };
-
-        await request(app.getHttpServer()).put(`/users/banks/${validConnectionId}`).send(invalidData).expect(400);
-
-        expect(bankConnectionService.update).not.toHaveBeenCalled();
       });
     });
   });

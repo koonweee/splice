@@ -44,7 +44,6 @@ describe('BankConnectionController', () => {
     const mockBankConnectionService = {
       findByUserId: jest.fn(),
       create: jest.fn(),
-      update: jest.fn(),
       delete: jest.fn(),
       findByUserIdAndConnectionId: jest.fn(),
     };
@@ -138,23 +137,6 @@ describe('BankConnectionController', () => {
         createdAt: mockBankConnection.createdAt,
         updatedAt: mockBankConnection.updatedAt,
       });
-    });
-  });
-
-  describe('updateBankConnection', () => {
-    const updateRequest = {
-      alias: 'Updated Alias',
-      status: BankConnectionStatus.ACTIVE,
-    };
-
-    it('should update bank connection successfully', async () => {
-      const updatedConnection = { ...mockBankConnection, ...updateRequest };
-      bankConnectionService.update.mockResolvedValue(updatedConnection);
-
-      const result = await controller.updateBankConnection(mockUser, { connectionId: mockConnectionId }, updateRequest);
-
-      expect(bankConnectionService.update).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId, updateRequest);
-      expect(result.alias).toBe('Updated Alias');
     });
   });
 

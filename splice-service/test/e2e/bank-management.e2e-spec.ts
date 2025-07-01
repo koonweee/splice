@@ -72,7 +72,6 @@ describe('Bank Management (e2e)', () => {
       findByUserId: jest.fn(),
       findByUserIdAndConnectionId: jest.fn(),
       create: jest.fn(),
-      update: jest.fn(),
       delete: jest.fn(),
     };
 
@@ -223,41 +222,7 @@ describe('Bank Management (e2e)', () => {
       // Verify service was called
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(testUser.id, connectionId);
 
-      // Step 5: Update the connection (activate it)
-      const updateRequest = {
-        status: BankConnectionStatus.ACTIVE,
-        alias: 'My Updated Bank Connection',
-      };
-
-      const mockUpdatedConnection = {
-        ...mockCreatedConnection,
-        status: BankConnectionStatus.ACTIVE,
-        alias: 'My Updated Bank Connection',
-      };
-
-      bankConnectionService.update.mockResolvedValue(mockUpdatedConnection);
-
-      const updateResponse = await request(app.getHttpServer())
-        .put(`/users/banks/${connectionId}`)
-        .send(updateRequest)
-        .expect(200);
-
-      expect(updateResponse.body.status).toBe(BankConnectionStatus.ACTIVE);
-      expect(updateResponse.body.alias).toBe('My Updated Bank Connection');
-
-      // Verify service was called
-      expect(bankConnectionService.update).toHaveBeenCalledWith(testUser.id, connectionId, updateRequest);
-
-      // Step 6: Verify the update by checking status again
-      bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(mockUpdatedConnection);
-
-      const updatedStatusResponse = await request(app.getHttpServer())
-        .get(`/users/banks/${connectionId}/status`)
-        .expect(200);
-
-      expect(updatedStatusResponse.body.status).toBe(BankConnectionStatus.ACTIVE);
-
-      // Step 7: Delete the connection
+      // Step 5: Delete the connection
       bankConnectionService.delete.mockResolvedValue(undefined);
 
       await request(app.getHttpServer()).delete(`/users/banks/${connectionId}`).expect(200);
@@ -265,7 +230,7 @@ describe('Bank Management (e2e)', () => {
       // Verify service was called
       expect(bankConnectionService.delete).toHaveBeenCalledWith(testUser.id, connectionId);
 
-      // Step 8: Verify the connection is deleted
+      // Step 6: Verify the connection is deleted
       bankConnectionService.findByUserId.mockResolvedValue([]);
 
       const emptyConnectionsResponse = await request(app.getHttpServer()).get('/users/banks').expect(200);
@@ -273,7 +238,7 @@ describe('Bank Management (e2e)', () => {
       expect(emptyConnectionsResponse.body).toBeInstanceOf(Array);
       expect(emptyConnectionsResponse.body.length).toBe(0);
 
-      // Step 9: Verify accessing deleted connection returns 404
+      // Step 7: Verify accessing deleted connection returns 404
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(null);
 
       await request(app.getHttpServer()).get(`/users/banks/${connectionId}/status`).expect(404);

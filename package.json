@@ -3,8 +3,7 @@
   "private": true,
   "workspaces": [
     "splice-api",
-    "splice-service",
-    "splice-web"
+    "splice-service"
   ],
   "scripts": {
     "dev": "bun run --filter splice-service dev",

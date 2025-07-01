@@ -8,7 +8,6 @@ import {
   NotFoundException,
   Param,
   Post,
-  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -26,12 +25,7 @@ import { ApiKeyStoreService } from '../api-key-store/api-key-store.service';
 import { AuthenticatedUser } from '../common/decorators';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
 import { BankConnectionService } from './bank-connection.service';
-import {
-  BankConnectionByIdParamsDto,
-  CreateBankConnectionDto,
-  GetTransactionsDto,
-  UpdateBankConnectionDto,
-} from './dto';
+import { BankConnectionByIdParamsDto, CreateBankConnectionDto, GetTransactionsDto } from './dto';
 
 @ApiTags('bank-connections')
 @Controller('users/banks')
@@ -78,36 +72,6 @@ export class BankConnectionController {
 
     if (!connection) {
       throw new HttpException('Bank connection could not be created', 400);
-    }
-
-    return {
-      id: connection.id,
-      bankId: connection.bankId,
-      bankName: connection.bank.name,
-      bankLogoUrl: connection.bank.logoUrl,
-      sourceType: connection.bank.sourceType,
-      status: connection.status,
-      alias: connection.alias,
-      lastSync: connection.lastSync,
-      createdAt: connection.createdAt,
-      updatedAt: connection.updatedAt,
-    };
-  }
-
-  @Put(':connectionId')
-  @ApiOperation({ summary: 'Update an existing bank connection' })
-  @ApiResponse({ status: 200, description: 'Bank connection updated successfully' })
-  @ApiResponse({ status: 404, description: 'Bank connection not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async updateBankConnection(
-    @AuthenticatedUser() user: User,
-    @Param() params: BankConnectionByIdParamsDto,
-    @Body() updateRequest: UpdateBankConnectionDto,
-  ): Promise<BankConnectionResponse> {
-    const connection = await this.bankConnectionService.update(user.id, params.connectionId, updateRequest);
-
-    if (!connection) {
-      throw new NotFoundException('Bank connection not found');
     }
 
     return {
