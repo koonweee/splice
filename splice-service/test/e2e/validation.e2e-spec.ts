@@ -22,7 +22,7 @@ describe('DTO Validation (e2e)', () => {
   let apiKeyStoreService: jest.Mocked<ApiKeyStoreService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
   let transactionsService: jest.Mocked<TransactionsService>;
-  let dataSourceManager: jest.Mocked<DataSourceManager>;
+  let _dataSourceManager: jest.Mocked<DataSourceManager>;
 
   // Use a consistent test user ID throughout the test
   const testUserId = '550e8400-e29b-41d4-a716-446655440000';
@@ -101,7 +101,7 @@ describe('DTO Validation (e2e)', () => {
     apiKeyStoreService = moduleFixture.get(ApiKeyStoreService);
     bankConnectionService = moduleFixture.get(BankConnectionService);
     transactionsService = moduleFixture.get(TransactionsService);
-    dataSourceManager = moduleFixture.get(DataSourceManager);
+    _dataSourceManager = moduleFixture.get(DataSourceManager);
   });
 
   afterAll(async () => {

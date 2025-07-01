@@ -9,7 +9,7 @@ import { MOCK_USER_ID } from '../../mocks/mocks';
 describe('BankConnectionController', () => {
   let controller: BankConnectionController;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let dataSourceManager: jest.Mocked<DataSourceManager>;
+  let _dataSourceManager: jest.Mocked<DataSourceManager>;
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
@@ -72,7 +72,7 @@ describe('BankConnectionController', () => {
 
     controller = module.get<BankConnectionController>(BankConnectionController);
     bankConnectionService = module.get(BankConnectionService);
-    dataSourceManager = module.get(DataSourceManager);
+    _dataSourceManager = module.get(DataSourceManager);
   });
 
   afterEach(() => {

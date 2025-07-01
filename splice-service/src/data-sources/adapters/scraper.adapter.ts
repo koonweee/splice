@@ -78,7 +78,7 @@ export class ScraperAdapter implements DataSourceAdapter {
     }
   }
 
-  async fetchAccounts(connection: BankConnection, context?: DataSourceContext): Promise<StandardizedAccount[]> {
+  async fetchAccounts(connection: BankConnection, _context?: DataSourceContext): Promise<StandardizedAccount[]> {
     this.logger.log(`Fetching accounts for scraper connection ${connection.id}`);
 
     // For scrapers, we don't have a separate account fetching mechanism
@@ -124,8 +124,8 @@ export class ScraperAdapter implements DataSourceAdapter {
   async fetchTransactionsWithToken(
     connection: BankConnection,
     accountId: string,
-    startDate: Date,
-    endDate: Date,
+    _startDate: Date,
+    _endDate: Date,
     accessToken: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(`Fetching transactions with token for scraper connection ${connection.id}, account ${accountId}`);
@@ -149,7 +149,7 @@ export class ScraperAdapter implements DataSourceAdapter {
 
   private transformScrapedDataToStandardizedTransactions(
     scrapedData: Record<string, unknown>,
-    accountId: string,
+    _accountId: string,
     connection: BankConnection,
   ): StandardizedTransaction[] {
     const transactions: StandardizedTransaction[] = [];

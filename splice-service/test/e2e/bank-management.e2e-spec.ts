@@ -21,7 +21,7 @@ describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let dataSourceManager: jest.Mocked<DataSourceManager>;
+  let _dataSourceManager: jest.Mocked<DataSourceManager>;
   let testUser: User;
   let testBank: Bank;
   let testConnection: BankConnection;
@@ -116,7 +116,7 @@ describe('Bank Management (e2e)', () => {
 
     bankRegistryService = moduleFixture.get(BankRegistryService);
     bankConnectionService = moduleFixture.get(BankConnectionService);
-    dataSourceManager = moduleFixture.get(DataSourceManager);
+    _dataSourceManager = moduleFixture.get(DataSourceManager);
 
     // Set up default mock responses
     bankRegistryService.findAllActive.mockResolvedValue([testBank]);
