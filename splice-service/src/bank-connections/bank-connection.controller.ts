@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Headers,
   HttpException,
   NotFoundException,
   Param,
@@ -11,9 +12,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { BankConnectionResponse, BankConnectionStatus, User } from '@splice/api';
+import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiKeyType, BankConnectionResponse, BankConnectionStatus, StandardizedAccount, User } from '@splice/api';
+import { ApiKeyStoreService } from '../api-key-store/api-key-store.service';
 import { AuthenticatedUser } from '../common/decorators';
+import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
 import { BankConnectionService } from './bank-connection.service';
 import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnectionDto } from './dto';
 
@@ -22,7 +25,11 @@ import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnect
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class BankConnectionController {
-  constructor(private readonly bankConnectionService: BankConnectionService) {}
+  constructor(
+    private readonly bankConnectionService: BankConnectionService,
+    private readonly dataSourceManager: DataSourceManager,
+    private readonly apiKeyStoreService: ApiKeyStoreService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all bank connections for a user' })
@@ -134,5 +141,39 @@ export class BankConnectionController {
       status: connection.status,
       lastSync: connection.lastSync,
     };
+  }
+
+  @Get(':connectionId/accounts')
+  @ApiOperation({ summary: 'Get accounts for a bank connection' })
+  @ApiHeader({
+    name: 'X-Secret',
+    description: 'The secret returned when storing the API key (vault access token)',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of accounts for the bank connection',
+  })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getBankConnectionAccounts(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+    @Headers() headers: { 'X-Secret'?: string; 'x-secret'?: string },
+  ): Promise<StandardizedAccount[]> {
+    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(user.id, params.connectionId);
+    if (!connection) {
+      throw new NotFoundException('Bank connection not found');
+    }
+
+    // Extract and decrypt the vault access token
+    const secret = headers['X-Secret'] || headers['x-secret'];
+    if (!secret) {
+      throw new HttpException('X-Secret header is required', 400);
+    }
+
+    const vaultAccessToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
+
+    return this.dataSourceManager.fetchAccounts(connection, vaultAccessToken);
   }
 }

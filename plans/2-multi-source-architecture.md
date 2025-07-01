@@ -1,108 +1,130 @@
-# Feature Plan: Multi-Source Data Architecture
+# Engineering Plan: Multi-Source Adapter Architecture
 
-## Overview
-Transform the current scraper-only system into a pluggable architecture supporting multiple data source types (scrapers, aggregators like Plaid/SimpleFin). This enables unified access to financial data regardless of the underlying source.
+This document outlines the engineering plan to refactor the Splice application into a scalable, multi-source architecture. This design will enable seamless integration of various data source types (aggregators like Plaid, scrapers, etc.) and is optimized for open-source collaboration.
 
-## Requirements
-### Functional Requirements
-- [ ] Abstract data source operations behind unified interfaces
-- [ ] Support scraper-based sources (current DBS strategy)
-- [ ] Support aggregator sources (Plaid, SimpleFin, etc.)
-- [ ] Pluggable adapter system for new source types
-- [ ] Source-specific configuration management
-- [ ] Unified transaction format across all sources
-- [ ] Source health monitoring and error handling
+## Phase 1: Refactor Core Data Models and Types (`@splice/api`)
 
-### Non-Functional Requirements
-- [ ] No breaking changes to existing scraper functionality
-- [ ] New sources can be added without code changes to core system
-- [ ] Source adapter failures don't impact other sources
-- [ ] Response time parity with current scraper performance
+The first step is to establish a clear and consistent data model in the shared `@splice/api` package.
 
-## Technical Design
+### 1.1. Rename `BankSourceType` to `DataSourceType`
 
-### Architecture
-Implements Strategy + Adapter patterns to abstract data sources. Creates a unified DataSourceManager that coordinates between different source adapters while maintaining the current scraper functionality.
+To more accurately reflect the nature of the data providers, we will rename `BankSourceType`.
 
-### Components
-- **Services**: DataSourceManager, PlaidAdapter, SimplefinAdapter
-- **Interfaces**: DataSourceAdapter, TransactionNormalizer
-- **Controllers**: Update TransactionsController to use DataSourceManager
-- **Modules**: DataSourceModule, PlaidModule, SimplefinModule
+* **Action**: In `splice-api/src/banks/types.ts`, rename the `BankSourceType` enum to `DataSourceType`.
+* **Task**: Perform a global search-and-replace across the entire monorepo to update all references from `BankSourceType` to `DataSourceType`. This will affect entities, services, and DTOs in `splice-service`.
 
-### Database Changes
-- **New entities**:
-  - `DataSource` (registry of available data source providers)
-  - `SourceConfiguration` (source-specific settings)
-- **Schema modifications**:
-  - Add `sourceType` and `sourceId` to BankConnection
-  - Add source metadata fields
+```typescript
+// file: splice-api/src/banks/types.ts
+export enum DataSourceType { // <-- Renamed
+  SCRAPER = 'SCRAPER',
+  PLAID = 'PLAID',
+  SIMPLEFIN = 'SIMPLEFIN',
+}
+```
 
-### API Changes
-- **Modified endpoints**:
-  - Update transaction endpoints to work with unified data sources
-  - Add source-specific configuration endpoints
-- **New endpoints**:
-  - `GET /data-sources` - List available data source types
-  - `POST /data-sources/{type}/configure` - Configure source adapter
+### 1.2. Define the `DataSourceAdapter` Interface
 
-## Implementation Plan
+We will create the new, standardized interfaces that will govern all data source interactions.
 
-### Phase 1: Core Abstraction Layer
-- [ ] Create DataSourceAdapter interface
-- [ ] Create TransactionNormalizer interface  
-- [ ] Implement DataSourceManager service
-- [ ] Create unified transaction format
+* **Action**: Create a new file at `splice-api/src/data-sources/types.ts`.
+* **Content**: Add the `DataSourceAdapter`, `StandardizedAccount`, and `StandardizedTransaction` interfaces to this file. This content should be taken directly from the interface we designed previously.
 
-### Phase 2: Refactor Existing Scrapers
-- [ ] Wrap current ScraperService in ScraperAdapter
-- [ ] Update existing DBS strategy to use new interfaces
-- [ ] Migrate existing flows to use DataSourceManager
-- [ ] Ensure backward compatibility
+```typescript
+// file: splice-api/src/data-sources/types.ts
 
-### Phase 3: Aggregator Adapters
-- [ ] Implement PlaidAdapter with OAuth flow
-- [ ] Implement SimplefinAdapter
-- [ ] Add adapter configuration management
-- [ ] Create adapter health checks
+import { BankConnection } from '../bank-connections';
 
-### Phase 4: Integration & Registry
-- [ ] Update BankConnection to reference data sources
-- [ ] Create source registry and discovery
-- [ ] Add adapter lifecycle management
-- [ ] Implement error handling and fallbacks
+// ... StandardizedAccount and StandardizedTransaction interfaces ...
 
-## Testing Strategy
-- [ ] Unit tests for all adapters and interfaces
-- [ ] Integration tests for DataSourceManager
-- [ ] E2E tests ensuring existing scraper functionality unchanged
-- [ ] Mock tests for external aggregator APIs
-- [ ] Performance tests comparing old vs new architecture
+export interface DataSourceAdapter {
+  initiateConnection(userId: string): Promise<{ linkToken?: string; status: 'ready' | 'redirect' }>;
+  finalizeConnection(connectionData: object): Promise<{ authDetailsUuid: string; metadata: object }>;
+  getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }>;
+  fetchAccounts(connection: BankConnection): Promise<StandardizedAccount[]>;
+  fetchTransactions(connection: BankConnection, accountId: string, startDate: Date, endDate: Date): Promise<StandardizedTransaction[]>;
+}
+```
 
-## Dependencies
-- **Bank Connection System** (previous feature)
-- External aggregator SDKs (Plaid, SimpleFin)
-- OAuth library for aggregator authentication
-- Current ScraperService and strategies
+* **Action**: Export the new types from the package's main entry point.
+* **File**: `splice-api/src/index.ts`
+* **Task**: Add `export * from './data-sources/types';`
 
-## Risks & Considerations
-- **Backward Compatibility**: Must not break existing scraper users
-- **API Rate Limits**: Aggregators have different rate limiting policies
-- **Data Format Variations**: Transaction schemas vary significantly between sources
-- **Error Handling**: Different failure modes across scraper vs aggregator sources
-- **Configuration Complexity**: Each source type has different setup requirements
+## Phase 2: Implement the Adapter Architecture (`splice-service`)
 
-## Timeline
-**Estimated**: 2-3 weeks
+This phase involves creating the backend structure to manage and utilize the new adapters.
 
-## Questions & Decisions
-- [ ] Should we support fallback sources if primary source fails?
-- [ ] How to handle partial failures (some banks succeed, others fail)?
-- [ ] What's the normalization strategy for conflicting transaction data?
-- [ ] Should source adapters be hot-swappable or require restart?
-- [ ] How to handle source-specific features that don't map to unified interface?
+### 2.1. Create the `data-sources` Module
 
----
-**Created**: 2025-06-20  
-**Author**: Claude  
-**Status**: Planning
+We will create a dedicated module for all data source-related logic.
+
+* **Action**: Create a new directory: `splice-service/src/data-sources`.
+* **Sub-directories**: Inside `data-sources`, create:
+    * `adapters/`: This folder will hold the concrete adapter implementations (e.g., `plaid.adapter.ts`, `scraper.adapter.ts`).
+    * `manager/`: This folder will contain the `DataSourceManager` service.
+
+### 2.2. Implement the `DataSourceManager`
+
+This service will act as the central router for all data operations.
+
+* **Action**: Create `splice-service/src/data-sources/manager/data-source-manager.service.ts`.
+* **Logic**:
+    * The `DataSourceManager` will be injected with all available `DataSourceAdapter` implementations.
+    * It will have a public method for each operation (e.g., `fetchAccounts`, `initiateConnection`).
+    * Each method will take a `BankConnection` or `bankId`, look up the `DataSourceType` from the `Bank` registry, and delegate the call to the corresponding registered adapter.
+
+## Phase 3: Dependency Injection and Type-Safe Registration
+
+This is the most critical part for ensuring robustness and enabling open-source contributions. We will use NestJS's dependency injection system to create a type-safe and maintainable way to manage adapters.
+
+### 3.1. Create Adapter Injection Tokens
+
+* **Action**: Create a file like `splice-service/src/data-sources/adapters/adapter.constants.ts`.
+* **Content**: Define constants for injection tokens.
+
+```typescript
+// file: splice-service/src/data-sources/adapters/adapter.constants.ts
+export const DATA_SOURCE_ADAPTERS = 'DATA_SOURCE_ADAPTERS';
+```
+
+### 3.2. Configure the `data-sources.module.ts`
+
+This module will register all adapters and ensure that every `DataSourceType` has a corresponding implementation.
+
+* **Action**: Create `splice-service/src/data-sources/data-sources.module.ts`.
+* **Logic**:
+    1.  **Import and Provide Adapters**: Import each concrete adapter class (e.g., `PlaidAdapter`, `ScraperAdapter`). List them in the `providers` array so they are instantiated by NestJS.
+    2.  **Use a Factory Provider**: Create a factory provider for `DATA_SOURCE_ADAPTERS`. This factory will be injected with all individual adapters and will return a `Map<DataSourceType, DataSourceAdapter>`.
+    3.  **Implement `onModuleInit` for Type Safety**: The module will implement the `OnModuleInit` lifecycle hook. In the `onModuleInit` method, it will iterate through the `DataSourceType` enum and check if the injected map contains a registered adapter for each type. If an adapter is missing, the application will throw an error on startup. This guarantees that the system is never in a state where a data source type exists without a corresponding implementation.
+
+```typescript
+// Example for splice-service/src/data-sources/data-sources.module.ts
+
+@Module({
+  providers: [
+    DataSourceManager,
+    PlaidAdapter, // To be created
+    ScraperAdapter, // To be created
+    {
+      provide: DATA_SOURCE_ADAPTERS,
+      useFactory: (...adapters: DataSourceAdapter[]) => {
+        // Create and return a Map<DataSourceType, DataSourceAdapter>
+      },
+      inject: [PlaidAdapter, ScraperAdapter], // Inject all concrete adapters
+    },
+  ],
+  exports: [DataSourceManager],
+})
+export class DataSourcesModule implements OnModuleInit {
+  constructor(@Inject(DATA_SOURCE_ADAPTERS) private adapters: Map<DataSourceType, DataSourceAdapter>) {}
+
+  onModuleInit() {
+    for (const type of Object.values(DataSourceType)) {
+      if (!this.adapters.has(type)) {
+        throw new Error(`FATAL: No DataSourceAdapter implementation provided for DataSourceType "${type}"`);
+      }
+    }
+  }
+}
+```
+
+This plan provides a solid foundation for a highly extensible and maintainable system, directly addressing your goal of supporting multiple aggregators and encouraging community contributions.

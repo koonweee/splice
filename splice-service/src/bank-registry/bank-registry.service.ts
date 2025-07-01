@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Bank, BankSourceType } from '@splice/api';
+import { Bank, DataSourceType } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankEntity } from './bank.entity';
 
@@ -46,7 +46,7 @@ export class BankRegistryService implements OnModuleInit {
     const banksToSeed = [
       {
         name: 'DBS Bank',
-        sourceType: BankSourceType.SCRAPER,
+        sourceType: DataSourceType.SCRAPER,
         scraperIdentifier: 'dbs',
         isActive: true,
       },

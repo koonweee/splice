@@ -1,7 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Bank, BankConnection, BankConnectionStatus, BankSourceType } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
 import type { Repository } from 'typeorm';
 import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
@@ -20,7 +20,7 @@ describe('BankConnectionService', () => {
     id: mockBankId,
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
-    sourceType: BankSourceType.SCRAPER,
+    sourceType: DataSourceType.SCRAPER,
     scraperIdentifier: 'test-bank',
     isActive: true,
     createdAt: new Date(),
