@@ -9,16 +9,29 @@ import {
   Param,
   Post,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { ApiKeyType, BankConnectionResponse, BankConnectionStatus, StandardizedAccount, User } from '@splice/api';
+import {
+  ApiKeyType,
+  BankConnectionResponse,
+  BankConnectionStatus,
+  StandardizedAccount,
+  StandardizedTransaction,
+  User,
+} from '@splice/api';
 import { ApiKeyStoreService } from '../api-key-store/api-key-store.service';
 import { AuthenticatedUser } from '../common/decorators';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
 import { BankConnectionService } from './bank-connection.service';
-import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnectionDto } from './dto';
+import {
+  BankConnectionByIdParamsDto,
+  CreateBankConnectionDto,
+  GetTransactionsDto,
+  UpdateBankConnectionDto,
+} from './dto';
 
 @ApiTags('bank-connections')
 @Controller('users/banks')
@@ -175,5 +188,43 @@ export class BankConnectionController {
     const vaultAccessToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
 
     return this.dataSourceManager.fetchAccounts(connection, vaultAccessToken);
+  }
+
+  @Get(':connectionId/transactions')
+  @ApiOperation({ summary: 'Get standardized transactions for a bank connection' })
+  @ApiHeader({
+    name: 'X-Secret',
+    description: 'The secret returned when storing the API key (vault access token)',
+    required: true,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'List of standardized transactions for the bank connection',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  async getBankConnectionTransactions(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+    @Query() query: GetTransactionsDto,
+    @Headers() headers: { 'X-Secret'?: string; 'x-secret'?: string },
+  ): Promise<StandardizedTransaction[]> {
+    const secret = headers['X-Secret'] || headers['x-secret'];
+    if (!secret) {
+      throw new HttpException('X-Secret header is required', 400);
+    }
+
+    const vaultAccessToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
+
+    const startDate = query.startDate ? new Date(query.startDate) : undefined;
+    const endDate = query.endDate ? new Date(query.endDate) : undefined;
+
+    return this.bankConnectionService.getTransactions(
+      user.id,
+      params.connectionId,
+      vaultAccessToken,
+      startDate,
+      endDate,
+    );
   }
 }

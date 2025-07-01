@@ -4,10 +4,12 @@ import {
   BankConnection,
   BankConnectionStatus,
   CreateBankConnectionRequest,
+  StandardizedTransaction,
   UpdateBankConnectionRequest,
 } from '@splice/api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
+import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
 import { BankConnectionEntity } from './bank-connection.entity';
 
 @Injectable()
@@ -16,6 +18,7 @@ export class BankConnectionService {
     @InjectRepository(BankConnectionEntity)
     private bankConnectionRepository: Repository<BankConnectionEntity>,
     private bankRegistryService: BankRegistryService,
+    private dataSourceManager: DataSourceManager,
   ) {}
 
   async findByUserId(userId: string): Promise<BankConnection[]> {
@@ -102,5 +105,26 @@ export class BankConnectionService {
 
   async updateStatus(connectionId: string, status: BankConnectionStatus): Promise<void> {
     await this.bankConnectionRepository.update(connectionId, { status });
+  }
+
+  async getTransactions(
+    userId: string,
+    connectionId: string,
+    vaultAccessToken: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<StandardizedTransaction[]> {
+    const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
+    if (!connection) {
+      throw new NotFoundException(`Bank connection not found: ${connectionId}`);
+    }
+
+    return await this.dataSourceManager.fetchTransactions(
+      connection,
+      `${connectionId}-default`,
+      startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      endDate || new Date(),
+      vaultAccessToken,
+    );
   }
 }

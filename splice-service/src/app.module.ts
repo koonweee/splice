@@ -10,7 +10,6 @@ import { DataSourcesModule } from './data-sources/data-sources.module';
 import { HealthModule } from './health/health.module';
 import { SecurityHeadersMiddleware } from './middleware/security-headers.middleware';
 import { ScraperModule } from './scraper/scraper.module';
-import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -34,7 +33,6 @@ import { UsersModule } from './users/users.module';
       inject: [ConfigService],
     }),
     AuthModule,
-    TransactionsModule,
     ScraperModule,
     DataSourcesModule,
     HealthModule,

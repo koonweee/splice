@@ -11,8 +11,6 @@ import { ApiKeyStoreService } from '../../src/api-key-store/api-key-store.servic
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
 import { DataSourceManager } from '../../src/data-sources/manager/data-source-manager.service';
-import { TransactionsService } from '../../src/transactions/transactions.service';
-import { TransactionsController } from '../../src/transactions/transcations.controller';
 import { UserController } from '../../src/users/user.controller';
 import { UserService } from '../../src/users/user.service';
 
@@ -21,7 +19,6 @@ describe('DTO Validation (e2e)', () => {
   let userService: jest.Mocked<UserService>;
   let apiKeyStoreService: jest.Mocked<ApiKeyStoreService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let transactionsService: jest.Mocked<TransactionsService>;
   let _dataSourceManager: jest.Mocked<DataSourceManager>;
 
   // Use a consistent test user ID throughout the test
@@ -45,10 +42,7 @@ describe('DTO Validation (e2e)', () => {
       update: jest.fn(),
       delete: jest.fn(),
       findByUserIdAndConnectionId: jest.fn(),
-    };
-
-    const mockTransactionsService = {
-      getTransactionsByBankConnection: jest.fn(),
+      getTransactions: jest.fn(),
     };
 
     const mockDataSourceManager = {
@@ -60,12 +54,11 @@ describe('DTO Validation (e2e)', () => {
     };
 
     const moduleFixture = await Test.createTestingModule({
-      controllers: [UserController, ApiKeyStoreController, BankConnectionController, TransactionsController],
+      controllers: [UserController, ApiKeyStoreController, BankConnectionController],
       providers: [
         { provide: UserService, useValue: mockUserService },
         { provide: ApiKeyStoreService, useValue: mockApiKeyStoreService },
         { provide: BankConnectionService, useValue: mockBankConnectionService },
-        { provide: TransactionsService, useValue: mockTransactionsService },
         { provide: DataSourceManager, useValue: mockDataSourceManager },
       ],
     })
@@ -100,7 +93,6 @@ describe('DTO Validation (e2e)', () => {
     userService = moduleFixture.get(UserService);
     apiKeyStoreService = moduleFixture.get(ApiKeyStoreService);
     bankConnectionService = moduleFixture.get(BankConnectionService);
-    transactionsService = moduleFixture.get(TransactionsService);
     _dataSourceManager = moduleFixture.get(DataSourceManager);
   });
 
@@ -365,33 +357,33 @@ describe('DTO Validation (e2e)', () => {
     });
   });
 
-  describe('TransactionsController Validation', () => {
+  describe('BankConnectionController Transactions', () => {
     const validConnectionId = uuidv4();
 
-    describe('GET /transactions/by-connection', () => {
+    describe('GET /users/banks/:connectionId/transactions', () => {
       it('should accept valid query parameters', async () => {
-        transactionsService.getTransactionsByBankConnection.mockResolvedValue([]);
+        bankConnectionService.getTransactions.mockResolvedValue([]);
         apiKeyStoreService.retrieveApiKey.mockResolvedValue('mock-token');
 
         await request(app.getHttpServer())
-          .get('/transactions/by-connection')
-          .query({
-            connectionId: validConnectionId,
-          })
+          .get(`/users/banks/${validConnectionId}/transactions`)
           .set('X-Secret', 'valid-secret')
           .expect(200); // Auth bypassed, mocked service succeeds
       });
 
       it('should reject request with invalid connectionId', async () => {
         await request(app.getHttpServer())
-          .get('/transactions/by-connection')
-          .query({
-            connectionId: 'invalid-uuid',
-          })
+          .get('/users/banks/invalid-uuid/transactions')
           .set('X-Secret', 'valid-secret')
           .expect(400);
 
-        expect(transactionsService.getTransactionsByBankConnection).not.toHaveBeenCalled();
+        expect(bankConnectionService.getTransactions).not.toHaveBeenCalled();
+      });
+
+      it('should reject request without X-Secret header', async () => {
+        await request(app.getHttpServer()).get(`/users/banks/${validConnectionId}/transactions`).expect(400);
+
+        expect(bankConnectionService.getTransactions).not.toHaveBeenCalled();
       });
     });
   });
