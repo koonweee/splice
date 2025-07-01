@@ -176,7 +176,7 @@ describe('ScraperAdapter', () => {
 
     it('should log health check operations', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
-      
+
       await adapter.getHealthStatus(mockBankConnection);
 
       expect(logSpy).toHaveBeenCalledWith(`Checking health status for scraper connection ${mockConnectionId}`);

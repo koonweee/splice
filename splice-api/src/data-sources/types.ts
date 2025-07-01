@@ -22,21 +22,16 @@ export interface StandardizedTransaction {
   metadata?: Record<string, any>;
 }
 
-export interface DataSourceContext {
-  accessToken?: string;
-  [key: string]: any;
-}
-
 export interface DataSourceAdapter {
   initiateConnection(userId: string): Promise<{ linkToken?: string; status: 'ready' | 'redirect' }>;
   finalizeConnection(connectionData: object): Promise<{ authDetailsUuid: string; metadata: object }>;
   getHealthStatus(connection: BankConnection): Promise<{ healthy: boolean; error?: string }>;
-  fetchAccounts(connection: BankConnection, context?: DataSourceContext): Promise<StandardizedAccount[]>;
+  fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]>;
   fetchTransactions(
     connection: BankConnection,
     accountId: string,
     startDate: Date,
     endDate: Date,
-    context?: DataSourceContext,
+    vaultAccessToken: string,
   ): Promise<StandardizedTransaction[]>;
 }
