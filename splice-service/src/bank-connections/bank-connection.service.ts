@@ -97,7 +97,7 @@ export class BankConnectionService {
 
   async initiateLogin(userId: string, connectionId: string): Promise<object | undefined> {
     const connection = await this.findByUserIdAndConnectionIdOrThrow(userId, connectionId);
-    return this.dataSourceManager.initiateConnection(connection.bank.sourceType, userId);
+    return this.dataSourceManager.initiateConnection(connection.bank.sourceType);
   }
 
   async finalizeLogin(

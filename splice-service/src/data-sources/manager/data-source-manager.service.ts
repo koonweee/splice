@@ -17,10 +17,10 @@ export class DataSourceManager {
     private readonly adapters: Map<DataSourceType, DataSourceAdapter>,
   ) {}
 
-  async initiateConnection(sourceType: DataSourceType, userId: string): Promise<object | undefined> {
+  async initiateConnection(sourceType: DataSourceType): Promise<object | undefined> {
     const adapter = this.getAdapter(sourceType);
     this.logger.log(`Initiating connection for source type ${sourceType}`);
-    return adapter.initiateConnection(userId);
+    return adapter.initiateConnection();
   }
 
   async validateFinalizeConnectionPayload(sourceType: DataSourceType, payload?: object): Promise<void> {

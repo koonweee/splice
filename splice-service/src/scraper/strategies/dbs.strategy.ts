@@ -121,7 +121,7 @@ export class DBSStrategy implements ScraperStrategy {
     const accountOptions = await accountSelector.locator('option').all();
 
     // Use Promise.all to handle async operations correctly
-    const accountSelectorOptions: AccountSelectorOption[] = (
+    const accountSelectorOptions = (
       await Promise.all(
         accountOptions.map(async (option) => {
           const text = await option.textContent();

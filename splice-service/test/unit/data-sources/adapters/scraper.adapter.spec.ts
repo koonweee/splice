@@ -103,7 +103,7 @@ describe('ScraperAdapter', () => {
 
   describe('initiateConnection', () => {
     it('should return undefined for scraper connections', async () => {
-      const result = await adapter.initiateConnection(mockUserId);
+      const result = await adapter.initiateConnection();
 
       expect(result).toBeUndefined();
     });
@@ -111,9 +111,9 @@ describe('ScraperAdapter', () => {
     it('should log the initiation', async () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
 
-      await adapter.initiateConnection(mockUserId);
+      await adapter.initiateConnection();
 
-      expect(logSpy).toHaveBeenCalledWith(`Initiating scraper connection for user ${mockUserId}`);
+      expect(logSpy).toHaveBeenCalledWith(`Initiating scraper connection`);
     });
   });
 
