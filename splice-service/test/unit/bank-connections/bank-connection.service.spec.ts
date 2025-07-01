@@ -6,12 +6,14 @@ import type { Repository } from 'typeorm';
 import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
+import { DataSourceManager } from '../../../src/data-sources/manager/data-source-manager.service';
 import { MOCK_USER_ID } from '../../mocks/mocks';
 
 describe('BankConnectionService', () => {
   let service: BankConnectionService;
   let repository: jest.Mocked<Repository<BankConnectionEntity>>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
+  let dataSourceManager: jest.Mocked<DataSourceManager>;
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
@@ -54,6 +56,10 @@ describe('BankConnectionService', () => {
       findById: jest.fn(),
     };
 
+    const mockDataSourceManager = {
+      fetchTransactions: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BankConnectionService,
@@ -65,12 +71,17 @@ describe('BankConnectionService', () => {
           provide: BankRegistryService,
           useValue: mockBankRegistryService,
         },
+        {
+          provide: DataSourceManager,
+          useValue: mockDataSourceManager,
+        },
       ],
     }).compile();
 
     service = module.get<BankConnectionService>(BankConnectionService);
     repository = module.get(getRepositoryToken(BankConnectionEntity));
     bankRegistryService = module.get(BankRegistryService);
+    dataSourceManager = module.get(DataSourceManager);
   });
 
   afterEach(() => {
@@ -254,6 +265,72 @@ describe('BankConnectionService', () => {
       expect(repository.update).toHaveBeenCalledWith(mockConnectionId, {
         status: BankConnectionStatus.ERROR,
       });
+    });
+  });
+
+  describe('getTransactions', () => {
+    const mockVaultAccessToken = 'vault-access-token';
+    const mockTransactions = [
+      {
+        id: 'tx1',
+        accountId: 'acc1',
+        date: '2024-01-01',
+        description: 'Test transaction',
+        amount: 100,
+        type: 'CREDIT' as const,
+      },
+    ];
+
+    it('should fetch transactions successfully', async () => {
+      repository.findOne.mockResolvedValue(mockBankConnection);
+      dataSourceManager.fetchTransactions.mockResolvedValue(mockTransactions);
+
+      const startDate = new Date('2024-01-01');
+      const endDate = new Date('2024-01-31');
+
+      const result = await service.getTransactions(
+        MOCK_USER_ID,
+        mockConnectionId,
+        mockVaultAccessToken,
+        startDate,
+        endDate,
+      );
+
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { id: mockConnectionId, userId: MOCK_USER_ID },
+        relations: ['bank'],
+      });
+      expect(dataSourceManager.fetchTransactions).toHaveBeenCalledWith(
+        mockBankConnection,
+        `${mockConnectionId}-default`,
+        startDate,
+        endDate,
+        mockVaultAccessToken,
+      );
+      expect(result).toEqual(mockTransactions);
+    });
+
+    it('should use default date range when dates not provided', async () => {
+      repository.findOne.mockResolvedValue(mockBankConnection);
+      dataSourceManager.fetchTransactions.mockResolvedValue(mockTransactions);
+
+      await service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken);
+
+      expect(dataSourceManager.fetchTransactions).toHaveBeenCalledWith(
+        mockBankConnection,
+        `${mockConnectionId}-default`,
+        expect.any(Date), // 90 days ago
+        expect.any(Date), // now
+        mockVaultAccessToken,
+      );
+    });
+
+    it('should throw NotFoundException when connection not found', async () => {
+      repository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken),
+      ).rejects.toThrow(new NotFoundException(`Bank connection not found: ${mockConnectionId}`));
     });
   });
 });
