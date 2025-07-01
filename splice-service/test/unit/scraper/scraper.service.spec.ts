@@ -167,12 +167,12 @@ describe('ScraperService', () => {
       );
     });
 
-    it('should throw HttpException when bank connection is not active', async () => {
+    it('should throw HttpException when bank connection is inactive', async () => {
       const inactiveConnection = { ...mockBankConnection, status: BankConnectionStatus.INACTIVE };
       bankConnectionService.findByUserIdAndConnectionId.mockResolvedValue(inactiveConnection);
 
       await expect(service.scrapeByBankConnection(MOCK_USER_ID, mockConnectionId, mockAccessToken)).rejects.toThrow(
-        new HttpException('Bank connection is not active', 400),
+        new HttpException('Bank connection is inactive', 400),
       );
     });
 
