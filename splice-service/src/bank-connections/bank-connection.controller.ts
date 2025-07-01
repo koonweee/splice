@@ -187,8 +187,6 @@ export class BankConnectionController {
     @Headers() headers: {
       'X-Secret'?: string;
       'x-secret'?: string;
-      'X-Organization-Id'?: string;
-      'x-organization-id'?: string;
     },
     @Body() payload: object,
   ): Promise<void> {
