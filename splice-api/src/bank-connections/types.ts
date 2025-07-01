@@ -1,4 +1,4 @@
-import type { Bank, BankSourceType } from '../banks';
+import type { Bank, DataSourceType } from '../banks';
 import type { BaseInterface } from '../common/base.types';
 
 export enum BankConnectionStatus {
@@ -34,7 +34,7 @@ export interface BankConnectionResponse {
   bankId: string;
   bankName: string;
   bankLogoUrl?: string;
-  sourceType: BankSourceType;
+  sourceType: DataSourceType;
   status: BankConnectionStatus;
   alias?: string;
   lastSync?: Date;

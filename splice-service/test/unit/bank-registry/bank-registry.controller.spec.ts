@@ -1,5 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, BankSourceType } from '@splice/api';
+import { Bank, DataSourceType } from '@splice/api';
 import { BankRegistryController } from '../../../src/bank-registry/bank-registry.controller';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 
@@ -12,7 +12,7 @@ describe('BankRegistryController', () => {
       id: 'bank-1',
       name: 'DBS Bank',
       logoUrl: 'https://example.com/dbs-logo.png',
-      sourceType: BankSourceType.SCRAPER,
+      sourceType: DataSourceType.SCRAPER,
       scraperIdentifier: 'dbs',
       isActive: true,
       createdAt: new Date(),
@@ -22,7 +22,7 @@ describe('BankRegistryController', () => {
       id: 'bank-2',
       name: 'OCBC Bank',
       logoUrl: undefined,
-      sourceType: BankSourceType.PLAID,
+      sourceType: DataSourceType.PLAID,
       scraperIdentifier: undefined,
       isActive: true,
       createdAt: new Date(),
@@ -65,13 +65,13 @@ describe('BankRegistryController', () => {
           id: 'bank-1',
           name: 'DBS Bank',
           logoUrl: 'https://example.com/dbs-logo.png',
-          sourceType: BankSourceType.SCRAPER,
+          sourceType: DataSourceType.SCRAPER,
         },
         {
           id: 'bank-2',
           name: 'OCBC Bank',
           logoUrl: undefined,
-          sourceType: BankSourceType.PLAID,
+          sourceType: DataSourceType.PLAID,
         },
       ]);
     });
@@ -89,7 +89,7 @@ describe('BankRegistryController', () => {
         id: 'bank-3',
         name: 'Test Bank',
         logoUrl: undefined,
-        sourceType: BankSourceType.SIMPLEFIN,
+        sourceType: DataSourceType.SIMPLEFIN,
         scraperIdentifier: undefined,
         isActive: true,
         createdAt: new Date(),
@@ -105,7 +105,7 @@ describe('BankRegistryController', () => {
           id: 'bank-3',
           name: 'Test Bank',
           logoUrl: undefined,
-          sourceType: BankSourceType.SIMPLEFIN,
+          sourceType: DataSourceType.SIMPLEFIN,
         },
       ]);
     });

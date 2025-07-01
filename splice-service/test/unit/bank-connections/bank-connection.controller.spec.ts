@@ -1,13 +1,15 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, BankConnection, BankConnectionStatus, BankSourceType, User } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
+import { DataSourceManager } from '../../../src/data-sources/manager/data-source-manager.service';
 import { MOCK_USER_ID } from '../../mocks/mocks';
 
 describe('BankConnectionController', () => {
   let controller: BankConnectionController;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
+  let dataSourceManager: jest.Mocked<DataSourceManager>;
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
@@ -17,7 +19,7 @@ describe('BankConnectionController', () => {
     id: mockBankId,
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
-    sourceType: BankSourceType.SCRAPER,
+    sourceType: DataSourceType.SCRAPER,
     scraperIdentifier: 'test-bank',
     isActive: true,
     createdAt: new Date(),
@@ -46,6 +48,14 @@ describe('BankConnectionController', () => {
       findByUserIdAndConnectionId: jest.fn(),
     };
 
+    const mockDataSourceManager = {
+      fetchAccounts: jest.fn(),
+      getHealthStatus: jest.fn(),
+      initiateConnection: jest.fn(),
+      finalizeConnection: jest.fn(),
+      fetchTransactions: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BankConnectionController],
       providers: [
@@ -53,11 +63,16 @@ describe('BankConnectionController', () => {
           provide: BankConnectionService,
           useValue: mockBankConnectionService,
         },
+        {
+          provide: DataSourceManager,
+          useValue: mockDataSourceManager,
+        },
       ],
     }).compile();
 
     controller = module.get<BankConnectionController>(BankConnectionController);
     bankConnectionService = module.get(BankConnectionService);
+    dataSourceManager = module.get(DataSourceManager);
   });
 
   afterEach(() => {
@@ -78,7 +93,7 @@ describe('BankConnectionController', () => {
           bankId: mockBankId,
           bankName: 'Test Bank',
           bankLogoUrl: 'https://example.com/logo.png',
-          sourceType: BankSourceType.SCRAPER,
+          sourceType: DataSourceType.SCRAPER,
           status: BankConnectionStatus.ACTIVE,
           alias: 'My Test Account',
           lastSync: mockBankConnection.lastSync,
@@ -107,7 +122,7 @@ describe('BankConnectionController', () => {
         bankId: mockBankId,
         bankName: 'Test Bank',
         bankLogoUrl: 'https://example.com/logo.png',
-        sourceType: BankSourceType.SCRAPER,
+        sourceType: DataSourceType.SCRAPER,
         status: BankConnectionStatus.ACTIVE,
         alias: 'My Test Account',
         lastSync: mockBankConnection.lastSync,

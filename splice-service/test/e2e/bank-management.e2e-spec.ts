@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthGuard, PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Bank, BankConnection, BankConnectionStatus, BankSourceType, User } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,6 +13,7 @@ import { BankConnectionController } from '../../src/bank-connections/bank-connec
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
 import { BankRegistryController } from '../../src/bank-registry/bank-registry.controller';
 import { BankRegistryService } from '../../src/bank-registry/bank-registry.service';
+import { DataSourceManager } from '../../src/data-sources/manager/data-source-manager.service';
 import { UserEntity } from '../../src/users/user.entity';
 import { UsersModule } from '../../src/users/users.module';
 
@@ -20,6 +21,7 @@ describe('Bank Management (e2e)', () => {
   let app: INestApplication<App>;
   let bankRegistryService: jest.Mocked<BankRegistryService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
+  let dataSourceManager: jest.Mocked<DataSourceManager>;
   let testUser: User;
   let testBank: Bank;
   let testConnection: BankConnection;
@@ -39,7 +41,7 @@ describe('Bank Management (e2e)', () => {
       id: uuidv4(),
       name: 'Test Bank',
       logoUrl: 'https://example.com/logo.png',
-      sourceType: BankSourceType.SCRAPER,
+      sourceType: DataSourceType.SCRAPER,
       scraperIdentifier: 'test-bank',
       isActive: true,
       createdAt: new Date(),
@@ -73,6 +75,14 @@ describe('Bank Management (e2e)', () => {
       delete: jest.fn(),
     };
 
+    const mockDataSourceManager = {
+      fetchAccounts: jest.fn(),
+      getHealthStatus: jest.fn(),
+      initiateConnection: jest.fn(),
+      finalizeConnection: jest.fn(),
+      fetchTransactions: jest.fn(),
+    };
+
     const moduleFixture = await Test.createTestingModule({
       controllers: [BankRegistryController, BankConnectionController],
       providers: [
@@ -83,6 +93,10 @@ describe('Bank Management (e2e)', () => {
         {
           provide: BankConnectionService,
           useValue: mockBankConnectionService,
+        },
+        {
+          provide: DataSourceManager,
+          useValue: mockDataSourceManager,
         },
       ],
     })
@@ -102,6 +116,7 @@ describe('Bank Management (e2e)', () => {
 
     bankRegistryService = moduleFixture.get(BankRegistryService);
     bankConnectionService = moduleFixture.get(BankConnectionService);
+    dataSourceManager = moduleFixture.get(DataSourceManager);
 
     // Set up default mock responses
     bankRegistryService.findAllActive.mockResolvedValue([testBank]);
@@ -359,6 +374,16 @@ describe('Bank Management (e2e)', () => {
             useValue: {
               findByUserId: jest.fn().mockResolvedValue([]),
               create: jest.fn(),
+            },
+          },
+          {
+            provide: DataSourceManager,
+            useValue: {
+              fetchAccounts: jest.fn(),
+              getHealthStatus: jest.fn(),
+              initiateConnection: jest.fn(),
+              finalizeConnection: jest.fn(),
+              fetchTransactions: jest.fn(),
             },
           },
         ],

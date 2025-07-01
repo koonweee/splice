@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
 import { BankRegistryModule } from './bank-registry/bank-registry.module';
 import config from './config';
+import { DataSourcesModule } from './data-sources/data-sources.module';
 import { HealthModule } from './health/health.module';
 import { SecurityHeadersMiddleware } from './middleware/security-headers.middleware';
 import { ScraperModule } from './scraper/scraper.module';
@@ -35,6 +36,7 @@ import { UsersModule } from './users/users.module';
     AuthModule,
     TransactionsModule,
     ScraperModule,
+    DataSourcesModule,
     HealthModule,
     UsersModule,
     ApiKeyStoreModule,

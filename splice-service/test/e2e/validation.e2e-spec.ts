@@ -10,6 +10,7 @@ import { ApiKeyStoreController } from '../../src/api-key-store/api-key-store.con
 import { ApiKeyStoreService } from '../../src/api-key-store/api-key-store.service';
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
+import { DataSourceManager } from '../../src/data-sources/manager/data-source-manager.service';
 import { TransactionsService } from '../../src/transactions/transactions.service';
 import { TransactionsController } from '../../src/transactions/transcations.controller';
 import { UserController } from '../../src/users/user.controller';
@@ -21,6 +22,7 @@ describe('DTO Validation (e2e)', () => {
   let apiKeyStoreService: jest.Mocked<ApiKeyStoreService>;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
   let transactionsService: jest.Mocked<TransactionsService>;
+  let dataSourceManager: jest.Mocked<DataSourceManager>;
 
   // Use a consistent test user ID throughout the test
   const testUserId = '550e8400-e29b-41d4-a716-446655440000';
@@ -49,6 +51,14 @@ describe('DTO Validation (e2e)', () => {
       getTransactionsByBankConnection: jest.fn(),
     };
 
+    const mockDataSourceManager = {
+      fetchAccounts: jest.fn(),
+      getHealthStatus: jest.fn(),
+      initiateConnection: jest.fn(),
+      finalizeConnection: jest.fn(),
+      fetchTransactions: jest.fn(),
+    };
+
     const moduleFixture = await Test.createTestingModule({
       controllers: [UserController, ApiKeyStoreController, BankConnectionController, TransactionsController],
       providers: [
@@ -56,6 +66,7 @@ describe('DTO Validation (e2e)', () => {
         { provide: ApiKeyStoreService, useValue: mockApiKeyStoreService },
         { provide: BankConnectionService, useValue: mockBankConnectionService },
         { provide: TransactionsService, useValue: mockTransactionsService },
+        { provide: DataSourceManager, useValue: mockDataSourceManager },
       ],
     })
       .overrideGuard(AuthGuard('jwt'))
@@ -90,6 +101,7 @@ describe('DTO Validation (e2e)', () => {
     apiKeyStoreService = moduleFixture.get(ApiKeyStoreService);
     bankConnectionService = moduleFixture.get(BankConnectionService);
     transactionsService = moduleFixture.get(TransactionsService);
+    dataSourceManager = moduleFixture.get(DataSourceManager);
   });
 
   afterAll(async () => {

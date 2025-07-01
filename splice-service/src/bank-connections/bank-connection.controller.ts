@@ -12,8 +12,9 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { BankConnectionResponse, BankConnectionStatus, User } from '@splice/api';
+import { BankConnectionResponse, BankConnectionStatus, StandardizedAccount, User } from '@splice/api';
 import { AuthenticatedUser } from '../common/decorators';
+import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
 import { BankConnectionService } from './bank-connection.service';
 import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnectionDto } from './dto';
 
@@ -22,7 +23,10 @@ import { BankConnectionByIdParamsDto, CreateBankConnectionDto, UpdateBankConnect
 @UseGuards(AuthGuard('jwt'))
 @ApiBearerAuth()
 export class BankConnectionController {
-  constructor(private readonly bankConnectionService: BankConnectionService) {}
+  constructor(
+    private readonly bankConnectionService: BankConnectionService,
+    private readonly dataSourceManager: DataSourceManager,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get all bank connections for a user' })
@@ -134,5 +138,25 @@ export class BankConnectionController {
       status: connection.status,
       lastSync: connection.lastSync,
     };
+  }
+
+  @Get(':connectionId/accounts')
+  @ApiOperation({ summary: 'Get accounts for a bank connection' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of accounts for the bank connection',
+  })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async getBankConnectionAccounts(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+  ): Promise<StandardizedAccount[]> {
+    const connection = await this.bankConnectionService.findByUserIdAndConnectionId(user.id, params.connectionId);
+    if (!connection) {
+      throw new NotFoundException('Bank connection not found');
+    }
+
+    return this.dataSourceManager.fetchAccounts(connection);
   }
 }

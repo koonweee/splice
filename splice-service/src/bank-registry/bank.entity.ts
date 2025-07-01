@@ -1,4 +1,4 @@
-import { Bank, BankSourceType } from '@splice/api';
+import { Bank, DataSourceType } from '@splice/api';
 import { Column, Entity } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 
@@ -12,9 +12,9 @@ export class BankEntity extends BaseEntity implements Bank {
 
   @Column({
     type: 'enum',
-    enum: BankSourceType,
+    enum: DataSourceType,
   })
-  declare sourceType: BankSourceType;
+  declare sourceType: DataSourceType;
 
   @Column({ nullable: true })
   declare scraperIdentifier?: string;

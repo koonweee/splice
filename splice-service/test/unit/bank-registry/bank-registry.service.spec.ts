@@ -1,6 +1,6 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Bank, BankSourceType } from '@splice/api';
+import { Bank, DataSourceType } from '@splice/api';
 import type { Repository } from 'typeorm';
 import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
@@ -13,7 +13,7 @@ describe('BankRegistryService', () => {
     id: 'test-bank-id',
     name: 'Test Bank',
     logoUrl: 'https://example.com/logo.png',
-    sourceType: BankSourceType.SCRAPER,
+    sourceType: DataSourceType.SCRAPER,
     scraperIdentifier: 'test-bank',
     isActive: true,
     createdAt: new Date(),
@@ -137,7 +137,7 @@ describe('BankRegistryService', () => {
       });
       expect(repository.create).toHaveBeenCalledWith({
         name: 'DBS Bank',
-        sourceType: BankSourceType.SCRAPER,
+        sourceType: DataSourceType.SCRAPER,
         scraperIdentifier: 'dbs',
         isActive: true,
       });
