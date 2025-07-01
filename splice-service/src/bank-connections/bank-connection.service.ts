@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   BankConnection,
@@ -9,6 +9,7 @@ import {
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
+import { VaultService } from '../vault/vault.service';
 import { BankConnectionEntity } from './bank-connection.entity';
 
 @Injectable()
@@ -18,6 +19,8 @@ export class BankConnectionService {
     private bankConnectionRepository: Repository<BankConnectionEntity>,
     private bankRegistryService: BankRegistryService,
     private dataSourceManager: DataSourceManager,
+    private vaultService: VaultService,
+    private logger: Logger,
   ) {}
 
   async findByUserId(userId: string): Promise<BankConnection[]> {
@@ -33,6 +36,14 @@ export class BankConnectionService {
       where: { id: connectionId, userId },
       relations: ['bank'],
     });
+  }
+
+  async findByUserIdAndConnectionIdOrThrow(userId: string, connectionId: string): Promise<BankConnection> {
+    const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
+    if (!connection) {
+      throw new NotFoundException(`Bank connection not found: ${connectionId}`);
+    }
+    return connection;
   }
 
   async create(userId: string, createRequest: CreateBankConnectionRequest): Promise<BankConnection | null> {
@@ -82,6 +93,40 @@ export class BankConnectionService {
 
   async updateAuthDetailsUuid(connectionId: string, authDetailsUuid: string): Promise<void> {
     await this.bankConnectionRepository.update(connectionId, { authDetailsUuid });
+  }
+
+  async initiateLogin(userId: string, connectionId: string): Promise<object | undefined> {
+    const connection = await this.findByUserIdAndConnectionIdOrThrow(userId, connectionId);
+    return this.dataSourceManager.initiateConnection(connection.bank.sourceType);
+  }
+
+  async finalizeLogin(
+    userId: string,
+    connectionId: string,
+    vaultAccessToken: string,
+    vaultOrganisationId: string,
+    payload: object,
+  ): Promise<void> {
+    this.logger.log(`Finalizing login for connection ${connectionId}`);
+    const connection = await this.findByUserIdAndConnectionIdOrThrow(userId, connectionId);
+
+    // Validate the payload
+    this.dataSourceManager.validateFinalizeConnectionPayload(connection.bank.sourceType, payload);
+
+    // Store the payload in the vault
+    const authDetailsUuid = await this.vaultService.createSecret(
+      connection.id,
+      payload,
+      vaultAccessToken,
+      vaultOrganisationId,
+    );
+
+    // Update the connection with the auth details uuid
+    await this.updateAuthDetailsUuid(connectionId, authDetailsUuid);
+
+    // Update the connection status to ACTIVE
+    await this.updateStatus(connectionId, BankConnectionStatus.ACTIVE);
+    this.logger.log(`Finalized login for connection ${connectionId}`);
   }
 
   async getTransactions(

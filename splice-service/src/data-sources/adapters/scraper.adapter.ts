@@ -28,8 +28,8 @@ export class ScraperAdapter implements DataSourceAdapter {
 
   constructor(private readonly scraperService: ScraperService) {}
 
-  async initiateConnection(userId: string) {
-    this.logger.log(`Initiating scraper connection for user ${userId}`);
+  async initiateConnection() {
+    this.logger.log(`Initiating scraper connection`);
     // For scrapers, no setup required so this returns immediately
     return undefined;
   }

@@ -158,6 +158,60 @@ export class BankConnectionController {
     return this.dataSourceManager.fetchAccounts(connection, vaultAccessToken);
   }
 
+  @Post(':connectionId/initiate-login')
+  @ApiOperation({ summary: 'Initiate login for a bank connection' })
+  @ApiResponse({ status: 200, description: 'Login initiation data' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async initiateBankConnectionLogin(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+  ): Promise<object | undefined> {
+    return this.bankConnectionService.initiateLogin(user.id, params.connectionId);
+  }
+
+  @Post(':connectionId/finalize-login')
+  @ApiOperation({ summary: 'Finalize login for a bank connection' })
+  @ApiHeader({
+    name: 'X-Secret',
+    description: 'The secret returned when storing the API key (vault access token)',
+    required: true,
+  })
+  @ApiResponse({ status: 200, description: 'Login finalized successfully' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  @ApiResponse({ status: 404, description: 'Bank connection not found' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  async finalizeBankConnectionLogin(
+    @AuthenticatedUser() user: User,
+    @Param() params: BankConnectionByIdParamsDto,
+    @Headers() headers: {
+      'X-Secret'?: string;
+      'x-secret'?: string;
+      'X-Organization-Id'?: string;
+      'x-organization-id'?: string;
+    },
+    @Body() payload: object,
+  ): Promise<void> {
+    const secret = headers['X-Secret'] || headers['x-secret'];
+    if (!secret) {
+      throw new HttpException('X-Secret header is required', 400);
+    }
+
+    const { apiKey: vaultAccessToken, organisationId } = await this.apiKeyStoreService.retrieveApiKey(
+      user.id,
+      ApiKeyType.BITWARDEN,
+      secret,
+    );
+
+    await this.bankConnectionService.finalizeLogin(
+      user.id,
+      params.connectionId,
+      vaultAccessToken,
+      organisationId,
+      payload,
+    );
+  }
+
   @Get(':connectionId/transactions')
   @ApiOperation({ summary: 'Get standardized transactions for a bank connection' })
   @ApiHeader({

@@ -1,6 +1,6 @@
-import { NotFoundException } from '@nestjs/common';
+import { HttpException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
+import { ApiKeyType, Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
 import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
@@ -10,7 +10,7 @@ import { MOCK_USER_ID } from '../../mocks/mocks';
 describe('BankConnectionController', () => {
   let controller: BankConnectionController;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
-  let _dataSourceManager: jest.Mocked<DataSourceManager>;
+  let apiKeyStoreService: jest.Mocked<ApiKeyStoreService>;
 
   const mockConnectionId = 'test-connection-id';
   const mockBankId = 'test-bank-id';
@@ -46,6 +46,8 @@ describe('BankConnectionController', () => {
       create: jest.fn(),
       delete: jest.fn(),
       findByUserIdAndConnectionId: jest.fn(),
+      initiateLogin: jest.fn(),
+      finalizeLogin: jest.fn(),
     };
 
     const mockDataSourceManager = {
@@ -81,6 +83,7 @@ describe('BankConnectionController', () => {
 
     controller = module.get<BankConnectionController>(BankConnectionController);
     bankConnectionService = module.get(BankConnectionService);
+    apiKeyStoreService = module.get(ApiKeyStoreService);
   });
 
   afterEach(() => {
@@ -169,6 +172,90 @@ describe('BankConnectionController', () => {
       await expect(controller.getBankConnectionStatus(mockUser, { connectionId: mockConnectionId })).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('initiateBankConnectionLogin', () => {
+    it('should initiate login for bank connection', async () => {
+      const mockInitiateData = { authUrl: 'https://example.com/auth', sessionId: 'session123' };
+      bankConnectionService.initiateLogin.mockResolvedValue(mockInitiateData);
+
+      const result = await controller.initiateBankConnectionLogin(mockUser, { connectionId: mockConnectionId });
+
+      expect(bankConnectionService.initiateLogin).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId);
+      expect(result).toEqual(mockInitiateData);
+    });
+
+    it('should return undefined when initiate login returns undefined', async () => {
+      bankConnectionService.initiateLogin.mockResolvedValue(undefined);
+
+      const result = await controller.initiateBankConnectionLogin(mockUser, { connectionId: mockConnectionId });
+
+      expect(bankConnectionService.initiateLogin).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId);
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('finalizeBankConnectionLogin', () => {
+    const mockSecret = 'test-secret';
+    const mockVaultAccessToken = 'vault-access-token';
+    const mockOrganisationId = 'org-123';
+    const mockPayload = { username: 'testuser', password: 'testpass' };
+
+    beforeEach(() => {
+      apiKeyStoreService.retrieveApiKey.mockResolvedValue({
+        apiKey: mockVaultAccessToken,
+        organisationId: mockOrganisationId,
+      });
+    });
+
+    it('should finalize login successfully', async () => {
+      bankConnectionService.finalizeLogin.mockResolvedValue();
+
+      await controller.finalizeBankConnectionLogin(
+        mockUser,
+        { connectionId: mockConnectionId },
+        { 'X-Secret': mockSecret },
+        mockPayload,
+      );
+
+      expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(MOCK_USER_ID, ApiKeyType.BITWARDEN, mockSecret);
+      expect(bankConnectionService.finalizeLogin).toHaveBeenCalledWith(
+        MOCK_USER_ID,
+        mockConnectionId,
+        mockVaultAccessToken,
+        mockOrganisationId,
+        mockPayload,
+      );
+    });
+
+    it('should handle lowercase x-secret header', async () => {
+      bankConnectionService.finalizeLogin.mockResolvedValue();
+
+      await controller.finalizeBankConnectionLogin(
+        mockUser,
+        { connectionId: mockConnectionId },
+        { 'x-secret': mockSecret },
+        mockPayload,
+      );
+
+      expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(MOCK_USER_ID, ApiKeyType.BITWARDEN, mockSecret);
+      expect(bankConnectionService.finalizeLogin).toHaveBeenCalledWith(
+        MOCK_USER_ID,
+        mockConnectionId,
+        mockVaultAccessToken,
+        mockOrganisationId,
+        mockPayload,
+      );
+    });
+
+    it('should throw HttpException when X-Secret header is missing', async () => {
+      await expect(
+        controller.finalizeBankConnectionLogin(mockUser, { connectionId: mockConnectionId }, {}, mockPayload),
+      ).rejects.toThrow(new HttpException('X-Secret header is required', 400));
+
+      expect(apiKeyStoreService.retrieveApiKey).not.toHaveBeenCalled();
+      expect(bankConnectionService.finalizeLogin).not.toHaveBeenCalled();
     });
   });
 });
