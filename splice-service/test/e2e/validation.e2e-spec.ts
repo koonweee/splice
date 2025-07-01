@@ -46,10 +46,7 @@ describe('DTO Validation (e2e)', () => {
     };
 
     const mockTransactionsService = {
-      getTransactionsForAccount: jest.fn(),
-      getAccounts: jest.fn(),
       getTransactionsByBankConnection: jest.fn(),
-      getSecret: jest.fn(),
     };
 
     const moduleFixture = await Test.createTestingModule({
@@ -359,46 +356,6 @@ describe('DTO Validation (e2e)', () => {
   describe('TransactionsController Validation', () => {
     const validConnectionId = uuidv4();
 
-    describe('GET /transactions/by-account', () => {
-      it('should accept valid query parameters', async () => {
-        transactionsService.getTransactionsForAccount.mockResolvedValue([]);
-        apiKeyStoreService.retrieveApiKey.mockResolvedValue('mock-token');
-
-        await request(app.getHttpServer())
-          .get('/transactions/by-account')
-          .query({
-            accountName: 'My Account',
-          })
-          .set('X-Secret', 'valid-secret')
-          .expect(200); // Auth bypassed, mocked service succeeds
-      });
-
-      it('should reject request with missing accountName', async () => {
-        await request(app.getHttpServer())
-          .get('/transactions/by-account')
-          .query({})
-          .set('X-Secret', 'valid-secret')
-          .expect(400);
-
-        expect(transactionsService.getTransactionsForAccount).not.toHaveBeenCalled();
-      });
-
-      it('should handle missing X-Secret header', async () => {
-        transactionsService.getTransactionsForAccount.mockResolvedValue([]);
-        apiKeyStoreService.retrieveApiKey.mockResolvedValue('mock-token');
-
-        // Missing header gets passed as undefined but service still gets called
-        await request(app.getHttpServer())
-          .get('/transactions/by-account')
-          .query({
-            accountName: 'My Account',
-          })
-          .expect(200);
-
-        expect(apiKeyStoreService.retrieveApiKey).toHaveBeenCalledWith(testUserId, ApiKeyType.BITWARDEN, undefined);
-      });
-    });
-
     describe('GET /transactions/by-connection', () => {
       it('should accept valid query parameters', async () => {
         transactionsService.getTransactionsByBankConnection.mockResolvedValue([]);
@@ -423,36 +380,6 @@ describe('DTO Validation (e2e)', () => {
           .expect(400);
 
         expect(transactionsService.getTransactionsByBankConnection).not.toHaveBeenCalled();
-      });
-    });
-
-    describe('GET /transactions/secret', () => {
-      it('should accept valid secretId', async () => {
-        transactionsService.getSecret.mockResolvedValue('mock-secret');
-
-        await request(app.getHttpServer())
-          .get('/transactions/secret')
-          .query({
-            secretId: 'valid-secret-id',
-          })
-          .expect(200); // Auth bypassed, mocked service succeeds
-      });
-
-      it('should reject request with missing secretId', async () => {
-        await request(app.getHttpServer()).get('/transactions/secret').expect(400);
-
-        expect(transactionsService.getSecret).not.toHaveBeenCalled();
-      });
-
-      it('should reject request with empty secretId', async () => {
-        await request(app.getHttpServer())
-          .get('/transactions/secret')
-          .query({
-            secretId: '',
-          })
-          .expect(400);
-
-        expect(transactionsService.getSecret).not.toHaveBeenCalled();
       });
     });
   });

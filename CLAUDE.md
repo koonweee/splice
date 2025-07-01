@@ -61,7 +61,6 @@ Financial institutions are implemented as strategies in `src/scraper/strategies/
 ### Environment Configuration
 
 Required environment variables in `splice-service/.env`:
-- `DBS_SECRET_UUID` - Bitwarden secret ID for DBS credentials
 - `API_STORE_ENCRYPTION_KEY` - 256-bit hex key for encrypting tokens
 - `POSTGRES_*` - Database connection settings
 

@@ -33,7 +33,6 @@ cp .env.example .env
 ```
 
 Edit the `.env` file with your configuration:
-- `DBS_SECRET_UUID`: UUID of DBS secret stored in Bitwarden
 - `API_STORE_ENCRYPTION_KEY`: Encryption key for sensitive data (generate with `openssl rand -hex 32`)
 - Database configuration:
   - `POSTGRES_USER`
