@@ -51,48 +51,6 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async scrapeWebsite(websiteName: string, accessToken: string): Promise<ScrapedData> {
-    if (!this.browser) {
-      this.logger.error('Browser not initialized');
-      throw new HttpException('Browser not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
-    const strategy = this.scraperStrategies.get(websiteName);
-    if (!strategy) {
-      throw new HttpException(`No scraper strategy found for website: ${websiteName}`, HttpStatus.NOT_FOUND);
-    }
-
-    // Get the secret uuid for the strategy (located in the config at bitwarden.secrets.${websiteName})
-    const secretUuid = this.configService.get<string>(`bitwarden.secrets.${websiteName}`);
-    if (!secretUuid) {
-      throw new HttpException(`No secret uuid found for website: ${websiteName}`, HttpStatus.NOT_FOUND);
-    }
-
-    this.logger.log(`Retrieving secret for ${websiteName}: ${secretUuid}`);
-    const secret = await this.vaultService.getSecret(secretUuid, accessToken);
-
-    const page = await this.browser.newPage();
-    try {
-      this.logger.log(`Navigating to ${strategy.startUrl}`);
-      await page.goto(strategy.startUrl);
-      // Wait for network to be idle
-      await page.waitForLoadState('networkidle');
-      this.logger.log(`Page settled ${strategy.startUrl}`);
-
-      const data = await strategy.scrape(secret, page, this.logger);
-      return data;
-    } catch (error) {
-      let message: string = 'An error occurred while scraping the website';
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      this.logger.error(`Failed to scrape ${strategy.startUrl}: ${message}`);
-      throw new HttpException(`Failed to scrape ${strategy.startUrl}: ${message}`, HttpStatus.INTERNAL_SERVER_ERROR);
-    } finally {
-      await page.close();
-    }
-  }
-
   async scrapeByBankConnection(userId: string, connectionId: string, accessToken: string): Promise<ScrapedData> {
     if (!this.browser) {
       this.logger.error('Browser not initialized');

@@ -7,10 +7,3 @@ export interface AccountTransactionsResponse {
     amount: number;
   }>;
 }
-
-export interface GetAccountsResponse {
-  accounts: Array<{
-    name: string;
-    lastSyncTime?: Date;
-  }>;
-}
