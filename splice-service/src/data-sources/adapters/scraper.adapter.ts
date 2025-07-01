@@ -1,11 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import {
-  BankConnection,
-  DataSourceAdapter,
-  DataSourceContext,
-  StandardizedAccount,
-  StandardizedTransaction,
-} from '@splice/api';
+import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
 import { ScraperService } from '../../scraper/scraper.service';
 
 interface DBSAccountData {
@@ -78,12 +72,13 @@ export class ScraperAdapter implements DataSourceAdapter {
     }
   }
 
-  async fetchAccounts(connection: BankConnection, _context?: DataSourceContext): Promise<StandardizedAccount[]> {
+  async fetchAccounts(connection: BankConnection, _vaultAccessToken: string): Promise<StandardizedAccount[]> {
     this.logger.log(`Fetching accounts for scraper connection ${connection.id}`);
 
-    // For scrapers, we don't have a separate account fetching mechanism
-    // The accounts are discovered during transaction scraping
-    // Return a placeholder account for now
+    // For scrapers, we could potentially scrape to discover accounts
+    // For now, return a placeholder account but we have access to the vault token if needed
+    this.logger.debug(`Using vault access token for connection ${connection.id}`);
+
     return [
       {
         id: `${connection.id}-default`,
@@ -103,22 +98,17 @@ export class ScraperAdapter implements DataSourceAdapter {
     accountId: string,
     startDate: Date,
     endDate: Date,
-    context?: DataSourceContext,
+    vaultAccessToken: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(
       `Fetching transactions for scraper connection ${connection.id}, account ${accountId} from ${startDate.toISOString()} to ${endDate.toISOString()}`,
     );
 
-    // Extract access token from context
-    if (!context?.accessToken) {
-      throw new Error('ScraperAdapter.fetchTransactions requires an access token in the context');
-    }
-
-    return this.fetchTransactionsWithToken(connection, accountId, startDate, endDate, context.accessToken);
+    return this.fetchTransactionsWithToken(connection, accountId, startDate, endDate, vaultAccessToken);
   }
 
   /**
-   * Extended method for fetching transactions with access token
+   * Extended method for fetching transactions with vault access token
    * This is specific to the scraper adapter and not part of the base interface
    */
   async fetchTransactionsWithToken(
@@ -126,16 +116,18 @@ export class ScraperAdapter implements DataSourceAdapter {
     accountId: string,
     _startDate: Date,
     _endDate: Date,
-    accessToken: string,
+    vaultAccessToken: string,
   ): Promise<StandardizedTransaction[]> {
-    this.logger.log(`Fetching transactions with token for scraper connection ${connection.id}, account ${accountId}`);
+    this.logger.log(
+      `Fetching transactions with vault token for scraper connection ${connection.id}, account ${accountId}`,
+    );
 
     try {
       // Use the existing scraper service to get raw scraped data
       const scrapedData = await this.scraperService.scrapeByBankConnection(
         connection.userId,
         connection.id,
-        accessToken,
+        vaultAccessToken,
       );
 
       // Transform the scraped data to standardized format

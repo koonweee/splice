@@ -8,6 +8,7 @@ import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';
+import { ApiKeyStoreService } from '../../src/api-key-store/api-key-store.service';
 import { AuthModule } from '../../src/auth/auth.module';
 import { BankConnectionController } from '../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../src/bank-connections/bank-connection.service';
@@ -83,6 +84,11 @@ describe('Bank Management (e2e)', () => {
       fetchTransactions: jest.fn(),
     };
 
+    const mockApiKeyStoreService = {
+      storeApiKey: jest.fn(),
+      retrieveApiKey: jest.fn(),
+    };
+
     const moduleFixture = await Test.createTestingModule({
       controllers: [BankRegistryController, BankConnectionController],
       providers: [
@@ -97,6 +103,10 @@ describe('Bank Management (e2e)', () => {
         {
           provide: DataSourceManager,
           useValue: mockDataSourceManager,
+        },
+        {
+          provide: ApiKeyStoreService,
+          useValue: mockApiKeyStoreService,
         },
       ],
     })
@@ -384,6 +394,13 @@ describe('Bank Management (e2e)', () => {
               initiateConnection: jest.fn(),
               finalizeConnection: jest.fn(),
               fetchTransactions: jest.fn(),
+            },
+          },
+          {
+            provide: ApiKeyStoreService,
+            useValue: {
+              storeApiKey: jest.fn(),
+              retrieveApiKey: jest.fn(),
             },
           },
         ],

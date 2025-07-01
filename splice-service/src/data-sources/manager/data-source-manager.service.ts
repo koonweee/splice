@@ -2,7 +2,6 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   BankConnection,
   DataSourceAdapter,
-  DataSourceContext,
   DataSourceType,
   StandardizedAccount,
   StandardizedTransaction,
@@ -42,10 +41,10 @@ export class DataSourceManager {
     return adapter.getHealthStatus(connection);
   }
 
-  async fetchAccounts(connection: BankConnection, context?: DataSourceContext): Promise<StandardizedAccount[]> {
+  async fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]> {
     const adapter = this.getAdapter(connection.bank.sourceType);
     this.logger.log(`Fetching accounts for connection ${connection.id}`);
-    return adapter.fetchAccounts(connection, context);
+    return adapter.fetchAccounts(connection, vaultAccessToken);
   }
 
   async fetchTransactions(
@@ -53,11 +52,11 @@ export class DataSourceManager {
     accountId: string,
     startDate: Date,
     endDate: Date,
-    context?: DataSourceContext,
+    vaultAccessToken: string,
   ): Promise<StandardizedTransaction[]> {
     const adapter = this.getAdapter(connection.bank.sourceType);
     this.logger.log(`Fetching transactions for connection ${connection.id}, account ${accountId}`);
-    return adapter.fetchTransactions(connection, accountId, startDate, endDate, context);
+    return adapter.fetchTransactions(connection, accountId, startDate, endDate, vaultAccessToken);
   }
 
   private getAdapter(sourceType: DataSourceType): DataSourceAdapter {

@@ -1,6 +1,7 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
+import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { DataSourceManager } from '../../../src/data-sources/manager/data-source-manager.service';
@@ -56,6 +57,11 @@ describe('BankConnectionController', () => {
       fetchTransactions: jest.fn(),
     };
 
+    const mockApiKeyStoreService = {
+      storeApiKey: jest.fn(),
+      retrieveApiKey: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [BankConnectionController],
       providers: [
@@ -67,12 +73,15 @@ describe('BankConnectionController', () => {
           provide: DataSourceManager,
           useValue: mockDataSourceManager,
         },
+        {
+          provide: ApiKeyStoreService,
+          useValue: mockApiKeyStoreService,
+        },
       ],
     }).compile();
 
     controller = module.get<BankConnectionController>(BankConnectionController);
     bankConnectionService = module.get(BankConnectionService);
-    _dataSourceManager = module.get(DataSourceManager);
   });
 
   afterEach(() => {
