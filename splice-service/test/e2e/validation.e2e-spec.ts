@@ -381,9 +381,7 @@ describe('DTO Validation (e2e)', () => {
       });
 
       it('should reject request without X-Secret header', async () => {
-        await request(app.getHttpServer())
-          .get(`/users/banks/${validConnectionId}/transactions`)
-          .expect(400);
+        await request(app.getHttpServer()).get(`/users/banks/${validConnectionId}/transactions`).expect(400);
 
         expect(bankConnectionService.getTransactions).not.toHaveBeenCalled();
       });

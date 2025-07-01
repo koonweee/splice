@@ -328,9 +328,9 @@ describe('BankConnectionService', () => {
     it('should throw NotFoundException when connection not found', async () => {
       repository.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken),
-      ).rejects.toThrow(new NotFoundException(`Bank connection not found: ${mockConnectionId}`));
+      await expect(service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken)).rejects.toThrow(
+        new NotFoundException(`Bank connection not found: ${mockConnectionId}`),
+      );
     });
   });
 });
