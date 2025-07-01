@@ -185,7 +185,11 @@ export class BankConnectionController {
       throw new HttpException('X-Secret header is required', 400);
     }
 
-    const vaultAccessToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
+    const { apiKey: vaultAccessToken } = await this.apiKeyStoreService.retrieveApiKey(
+      user.id,
+      ApiKeyType.BITWARDEN,
+      secret,
+    );
 
     return this.dataSourceManager.fetchAccounts(connection, vaultAccessToken);
   }
@@ -214,7 +218,11 @@ export class BankConnectionController {
       throw new HttpException('X-Secret header is required', 400);
     }
 
-    const vaultAccessToken = await this.apiKeyStoreService.retrieveApiKey(user.id, ApiKeyType.BITWARDEN, secret);
+    const { apiKey: vaultAccessToken } = await this.apiKeyStoreService.retrieveApiKey(
+      user.id,
+      ApiKeyType.BITWARDEN,
+      secret,
+    );
 
     const startDate = query.startDate ? new Date(query.startDate) : undefined;
     const endDate = query.endDate ? new Date(query.endDate) : undefined;

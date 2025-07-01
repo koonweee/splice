@@ -27,7 +27,7 @@ export class ApiKeyStoreController {
     @Res({ passthrough: true }) response: Response,
   ): Promise<void> {
     const apiKey = headers['X-Api-Key'] || (headers as any)['x-api-key'];
-    const secret = await this.apiKeyStoreService.storeApiKey(user.id, apiKey, body.keyType);
+    const secret = await this.apiKeyStoreService.storeApiKey(user.id, apiKey, body.keyType, body.organisationId);
     response.set('X-Secret', secret);
   }
 }

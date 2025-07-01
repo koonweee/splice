@@ -8,4 +8,5 @@ export interface ApiKeyStore extends BaseInterface {
   userId: string;
   keyType: ApiKeyType;
   encryptedKey: string;
+  organisationId: string;
 }

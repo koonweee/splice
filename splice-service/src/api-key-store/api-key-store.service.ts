@@ -65,20 +65,25 @@ export class ApiKeyStoreService {
     }
   }
 
-  async storeApiKey(userId: string, apiKey: string, keyType: ApiKeyType): Promise<string> {
+  async storeApiKey(userId: string, apiKey: string, keyType: ApiKeyType, organisationId: string): Promise<string> {
     const { encryptedData, secret } = this.encrypt(apiKey, userId);
 
     const apiKeyStore = this.apiKeyStoreRepository.create({
       userId,
       keyType,
       encryptedKey: encryptedData,
+      organisationId,
     });
 
     await this.apiKeyStoreRepository.save(apiKeyStore);
     return secret;
   }
 
-  async retrieveApiKey(userId: string, keyType: ApiKeyType, secret: string): Promise<string> {
+  async retrieveApiKey(
+    userId: string,
+    keyType: ApiKeyType,
+    secret: string,
+  ): Promise<{ apiKey: string; organisationId: string }> {
     const storedKey = await this.apiKeyStoreRepository.findOne({
       where: {
         userId,
@@ -90,6 +95,7 @@ export class ApiKeyStoreService {
       throw new NotFoundException('API key not found');
     }
 
-    return this.decrypt(storedKey.encryptedKey, secret, userId);
+    const apiKey = this.decrypt(storedKey.encryptedKey, secret, userId);
+    return { apiKey, organisationId: storedKey.organisationId };
   }
 }

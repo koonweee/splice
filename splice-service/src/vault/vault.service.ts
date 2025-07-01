@@ -31,4 +31,53 @@ export class VaultService {
       throw error;
     }
   }
+
+  /**
+   * Create a new secret in the vault
+   * @param key The key for the secret
+   * @param value The value object for the secret (will be JSON stringified)
+   * @param accessToken The Bitwarden access token
+   * @param organizationId The organization ID where the secret will be created
+   * @returns The created secret response
+   */
+  async createSecret(key: string, value: object, accessToken: string, organizationId: string): Promise<string> {
+    try {
+      const client = await this.getBitwardenClient(accessToken);
+      const stringifiedValue = JSON.stringify(value, null, 2);
+      const secret = await client.secrets().create(organizationId, key, stringifiedValue, '', []);
+      this.logger.log(`Created secret with key: ${key}`);
+      return secret.id;
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Failed to create secret ${key}: ${error.message}`);
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * List all secrets in the organization
+   * @param accessToken The Bitwarden access token
+   * @param organizationId The organization ID to list secrets from
+   * @returns Array of secret identifiers
+   */
+  async listSecrets(
+    accessToken: string,
+    organizationId: string,
+  ): Promise<Array<{ id: string; key: string; organizationId: string }>> {
+    try {
+      const client = await this.getBitwardenClient(accessToken);
+      const secretsResponse = await client.secrets().list(organizationId);
+      return secretsResponse.data.map((secret) => ({
+        id: secret.id,
+        key: secret.key,
+        organizationId: secret.organizationId,
+      }));
+    } catch (error) {
+      if (error instanceof Error) {
+        this.logger.error(`Failed to list secrets for organization ${organizationId}: ${error.message}`);
+      }
+      throw error;
+    }
+  }
 }
