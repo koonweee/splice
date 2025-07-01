@@ -11,6 +11,7 @@ describe('ApiKeyStoreService', () => {
   let repository: jest.Mocked<Repository<ApiKeyStoreEntity>>;
 
   const mockUserId = 'test-user-id-123';
+  const mockOrganisationId = '123e4567-e89b-12d3-a456-426614174000';
   const mockApiKey = 'test-api-key-value';
   const mockEncryptionKey = 'test-master-key-32-bytes-long!!';
 
@@ -59,18 +60,20 @@ describe('ApiKeyStoreService', () => {
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
+        organisationId: mockOrganisationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN, mockOrganisationId);
 
       expect(repository.create).toHaveBeenCalledWith({
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: expect.any(String),
+        organisationId: mockOrganisationId,
       });
       expect(repository.save).toHaveBeenCalledWith(mockApiKeyStore);
       expect(secret).toBeDefined();
@@ -84,14 +87,15 @@ describe('ApiKeyStoreService', () => {
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
+        organisationId: mockOrganisationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret1 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
-      const secret2 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret1 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN, mockOrganisationId);
+      const secret2 = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN, mockOrganisationId);
 
       expect(secret1).not.toBe(secret2);
     });
@@ -105,13 +109,14 @@ describe('ApiKeyStoreService', () => {
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'test-encrypted',
+        organisationId: mockOrganisationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
       repository.create.mockReturnValue(mockApiKeyStore);
       repository.save.mockResolvedValue(mockApiKeyStore);
 
-      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN);
+      const secret = await service.storeApiKey(mockUserId, mockApiKey, ApiKeyType.BITWARDEN, mockOrganisationId);
 
       // Get the encrypted data from the create call
       const createCall = repository.create.mock.calls[0][0];
@@ -123,11 +128,12 @@ describe('ApiKeyStoreService', () => {
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey,
+        organisationId: mockOrganisationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       });
 
-      const retrievedApiKey = await service.retrieveApiKey(mockUserId, ApiKeyType.BITWARDEN, secret);
+      const result = await service.retrieveApiKey(mockUserId, ApiKeyType.BITWARDEN, secret);
 
       expect(repository.findOne).toHaveBeenCalledWith({
         where: {
@@ -135,7 +141,8 @@ describe('ApiKeyStoreService', () => {
           keyType: ApiKeyType.BITWARDEN,
         },
       });
-      expect(retrievedApiKey).toBe(mockApiKey);
+      expect(result.apiKey).toBe(mockApiKey);
+      expect(result.organisationId).toBe(mockOrganisationId);
     });
 
     it('should throw NotFoundException when API key is not found', async () => {
@@ -152,6 +159,7 @@ describe('ApiKeyStoreService', () => {
         userId: mockUserId,
         keyType: ApiKeyType.BITWARDEN,
         encryptedKey: 'some-encrypted-data',
+        organisationId: mockOrganisationId,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

@@ -16,5 +16,8 @@ export class ApiKeyStoreEntity extends BaseEntity implements ApiKeyStore {
 
   @Column({ type: 'text' })
   declare encryptedKey: string;
+
+  @Column({ type: 'uuid' })
+  declare organisationId: string;
 }
 export { ApiKeyType };

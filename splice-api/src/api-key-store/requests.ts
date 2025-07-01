@@ -2,6 +2,7 @@ import type { ApiKeyType } from './types';
 
 export interface CreateApiKeyRequest {
   keyType: ApiKeyType;
+  organisationId: string;
 }
 
 export interface CreateApiKeyParams {

@@ -213,6 +213,7 @@ describe('DTO Validation (e2e)', () => {
       it('should accept valid API key store data', async () => {
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
+          organisationId: '123e4567-e89b-12d3-a456-426614174000',
         };
 
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
@@ -224,7 +225,12 @@ describe('DTO Validation (e2e)', () => {
           .expect(201);
 
         // The mocked auth guard provides a user with the test ID
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, 'valid-api-key', ApiKeyType.BITWARDEN);
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          'valid-api-key',
+          ApiKeyType.BITWARDEN,
+          '123e4567-e89b-12d3-a456-426614174000',
+        );
       });
 
       // Test for invalid UUID parameter removed since userId is no longer in the URL
@@ -232,6 +238,7 @@ describe('DTO Validation (e2e)', () => {
       it('should handle missing X-Api-Key header', async () => {
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
+          organisationId: '123e4567-e89b-12d3-a456-426614174000',
         };
 
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
@@ -239,12 +246,18 @@ describe('DTO Validation (e2e)', () => {
         // Header validation doesn't work as expected for missing headers in NestJS
         await request(app.getHttpServer()).post('/api-key-store').send(validData).expect(201);
 
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, undefined, ApiKeyType.BITWARDEN);
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          undefined,
+          ApiKeyType.BITWARDEN,
+          '123e4567-e89b-12d3-a456-426614174000',
+        );
       });
 
       it('should handle empty X-Api-Key header', async () => {
         const validData = {
           keyType: ApiKeyType.BITWARDEN,
+          organisationId: '123e4567-e89b-12d3-a456-426614174000',
         };
 
         apiKeyStoreService.storeApiKey.mockResolvedValue('secret-123');
@@ -253,12 +266,18 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer()).post('/api-key-store').set('X-Api-Key', '').send(validData).expect(201);
 
         // Empty header is passed as empty string
-        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(testUserId, '', ApiKeyType.BITWARDEN);
+        expect(apiKeyStoreService.storeApiKey).toHaveBeenCalledWith(
+          testUserId,
+          '',
+          ApiKeyType.BITWARDEN,
+          '123e4567-e89b-12d3-a456-426614174000',
+        );
       });
 
       it('should reject request with invalid keyType', async () => {
         const invalidData = {
           keyType: 'INVALID_TYPE',
+          organisationId: '123e4567-e89b-12d3-a456-426614174000',
         };
 
         await request(app.getHttpServer())
@@ -274,7 +293,32 @@ describe('DTO Validation (e2e)', () => {
         await request(app.getHttpServer())
           .post('/api-key-store')
           .set('X-Api-Key', 'valid-api-key')
-          .send({})
+          .send({ organisationId: '123e4567-e89b-12d3-a456-426614174000' })
+          .expect(400);
+
+        expect(apiKeyStoreService.storeApiKey).not.toHaveBeenCalled();
+      });
+
+      it('should reject request with missing organisationId', async () => {
+        await request(app.getHttpServer())
+          .post('/api-key-store')
+          .set('X-Api-Key', 'valid-api-key')
+          .send({ keyType: ApiKeyType.BITWARDEN })
+          .expect(400);
+
+        expect(apiKeyStoreService.storeApiKey).not.toHaveBeenCalled();
+      });
+
+      it('should reject request with invalid organisationId UUID', async () => {
+        const invalidData = {
+          keyType: ApiKeyType.BITWARDEN,
+          organisationId: 'not-a-valid-uuid',
+        };
+
+        await request(app.getHttpServer())
+          .post('/api-key-store')
+          .set('X-Api-Key', 'valid-api-key')
+          .send(invalidData)
           .expect(400);
 
         expect(apiKeyStoreService.storeApiKey).not.toHaveBeenCalled();
@@ -363,7 +407,10 @@ describe('DTO Validation (e2e)', () => {
     describe('GET /users/banks/:connectionId/transactions', () => {
       it('should accept valid query parameters', async () => {
         bankConnectionService.getTransactions.mockResolvedValue([]);
-        apiKeyStoreService.retrieveApiKey.mockResolvedValue('mock-token');
+        apiKeyStoreService.retrieveApiKey.mockResolvedValue({
+          apiKey: 'mock-token',
+          organisationId: '123e4567-e89b-12d3-a456-426614174000',
+        });
 
         await request(app.getHttpServer())
           .get(`/users/banks/${validConnectionId}/transactions`)
