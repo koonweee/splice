@@ -6,9 +6,9 @@ import {
   StandardizedAccount,
   StandardizedTransaction,
 } from '@splice/api';
+import { BankConnectionService } from '../../bank-connections/bank-connection.service';
 import { ScraperService } from '../../scraper/scraper.service';
 import { VaultService } from '../../vault/vault.service';
-import { BankConnectionService } from '../../bank-connections/bank-connection.service';
 
 interface DBSAccountData {
   transactions: Array<{
