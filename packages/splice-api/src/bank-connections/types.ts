@@ -14,14 +14,13 @@ export interface BankConnection extends BaseInterface {
   status: BankConnectionStatus;
   alias?: string;
   lastSync?: Date;
-  authDetailsUuid: string;
+  authDetailsUuid?: string;
   bank: Bank;
 }
 
 export interface CreateBankConnectionRequest {
   bankId: string;
   alias?: string;
-  authDetailsUuid: string;
 }
 
 export interface UpdateBankConnectionRequest {

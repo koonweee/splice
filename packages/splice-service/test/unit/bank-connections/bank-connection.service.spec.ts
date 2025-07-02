@@ -152,7 +152,6 @@ describe('BankConnectionService', () => {
     const createRequest = {
       bankId: mockBankId,
       alias: 'My New Account',
-      authDetailsUuid: 'new-auth-uuid',
     };
 
     it('should create bank connection successfully', async () => {
@@ -168,7 +167,7 @@ describe('BankConnectionService', () => {
         userId: MOCK_USER_ID,
         bankId: mockBankId,
         alias: createRequest.alias,
-        authDetailsUuid: createRequest.authDetailsUuid,
+        authDetailsUuid: undefined,
         status: BankConnectionStatus.PENDING_AUTH,
       });
       expect(repository.save).toHaveBeenCalledWith(mockBankConnection);
@@ -294,6 +293,15 @@ describe('BankConnectionService', () => {
 
       await expect(service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken)).rejects.toThrow(
         new NotFoundException(`Bank connection not found: ${mockConnectionId}`),
+      );
+    });
+
+    it('should throw NotFoundException when connection not authenticated', async () => {
+      const unauthenticatedConnection = { ...mockBankConnection, authDetailsUuid: undefined };
+      repository.findOne.mockResolvedValue(unauthenticatedConnection);
+
+      await expect(service.getTransactions(MOCK_USER_ID, mockConnectionId, mockVaultAccessToken)).rejects.toThrow(
+        new NotFoundException('Bank connection not authenticated. Please complete login first.'),
       );
     });
   });

@@ -119,7 +119,6 @@ describe('BankConnectionController', () => {
     const createRequest = {
       bankId: mockBankId,
       alias: 'My New Account',
-      authDetailsUuid: 'new-auth-uuid',
     };
 
     it('should create bank connection successfully', async () => {
