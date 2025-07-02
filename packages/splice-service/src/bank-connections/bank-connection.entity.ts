@@ -24,8 +24,8 @@ export class BankConnectionEntity extends BaseEntity implements BankConnection {
   @Column({ nullable: true })
   declare lastSync?: Date;
 
-  @Column({ type: 'uuid' })
-  declare authDetailsUuid: string;
+  @Column({ type: 'uuid', nullable: true })
+  declare authDetailsUuid?: string;
 
   @ManyToOne(() => BankEntity)
   @JoinColumn({ name: 'bankId' })
