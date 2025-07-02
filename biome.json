@@ -34,7 +34,7 @@
   },
   "overrides": [
     {
-      "includes": ["splice-service/**/*.{ts,tsx}"],
+      "includes": ["packages/splice-service/**/*.{ts,tsx}"],
       "linter": {
         "rules": {
           "style": {
