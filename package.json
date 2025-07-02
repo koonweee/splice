@@ -16,6 +16,7 @@
     "format": "bun run --filter '*' format",
     "db": "bun run --filter splice-service db",
     "test:e2e": "bun run --filter splice-service test:e2e",
+    "clean": "rm -rf dist node_modules && rm -rf packages/*/dist packages/*/node_modules",
     "claude:usage": "bunx ccusage",
     "prepare": "husky"
   },
