@@ -10,7 +10,7 @@
     "test": "bun run --filter '*' test",
     "test:watch": "bun run --filter '*' test:watch",
     "test:cov": "bun run --filter '*' test:cov",
-    "lint": "bun run --filter '*' lint",
+    "lint": "bun run --filter '*' lint --diagnostic-level=error",
     "format": "bun run --filter '*' format",
     "db": "bun run --filter splice-service db",
     "test:e2e": "bun run --filter splice-service test:e2e",
