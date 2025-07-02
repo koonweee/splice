@@ -15,9 +15,6 @@
     "lint:src": "biome check src/",
     "format": "biome format --write ."
   },
-  "dependencies": {
-    "@splice/api": "workspace:*"
-  },
   "devDependencies": {
     "globals": "^16.2.0",
     "@types/jest": "^29.5.14",
