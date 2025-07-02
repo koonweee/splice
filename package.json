@@ -2,9 +2,7 @@
   "name": "splice-monorepo",
   "private": true,
   "workspaces": [
-    "splice-api",
-    "splice-api-client",
-    "splice-service"
+    "packages/**"
   ],
   "scripts": {
     "dev": "bun run --filter splice-service dev",
