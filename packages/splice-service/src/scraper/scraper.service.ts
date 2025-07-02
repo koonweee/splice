@@ -83,6 +83,10 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       // Update connection status to indicate scraping in progress
       await this.bankConnectionService.updateStatus(connectionId, BankConnectionStatus.ACTIVE);
 
+      if (!connection.authDetailsUuid) {
+        throw new Error('Bank connection not authenticated. Please complete login first.');
+      }
+
       this.logger.log(`Retrieving secret for connection ${connectionId}: ${connection.authDetailsUuid}`);
       const secret = await this.vaultService.getSecret(connection.authDetailsUuid, accessToken);
 

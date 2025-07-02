@@ -60,7 +60,7 @@ export class BankConnectionService {
       userId,
       bankId: createRequest.bankId,
       alias: createRequest.alias,
-      authDetailsUuid: createRequest.authDetailsUuid,
+      authDetailsUuid: undefined,
       status: BankConnectionStatus.PENDING_AUTH,
     });
 
@@ -139,6 +139,10 @@ export class BankConnectionService {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
       throw new NotFoundException(`Bank connection not found: ${connectionId}`);
+    }
+
+    if (!connection.authDetailsUuid) {
+      throw new NotFoundException('Bank connection not authenticated. Please complete login first.');
     }
 
     return await this.dataSourceManager.fetchTransactions(
