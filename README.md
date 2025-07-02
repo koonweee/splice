@@ -165,22 +165,24 @@ sequenceDiagram
     U->>S: POST /users/banks/{id}/initiate-login<br>Authorization: Bearer apiKey
     S-->>U: Login initialization data
 
-    %% Finalize Login & Fetch Transactions
+    %% Finalize Login - Store Credentials
     U->>S: POST /users/banks/{id}/finalize-login<br>Authorization: Bearer apiKey<br>X-Secret: secret<br>{username, password}
     S->>KS: Decrypt Bitwarden token using X-Secret
     KS-->>S: bitwarden_token
-    S->>V: Get bank credentials using token
-    V-->>S: bank_credentials
-    S->>B: Automated login & scraping via Playwright
-    B-->>S: Raw transaction data
-    S->>S: Normalize transactions
-    S-->>U: Login success
+    S->>V: Store bank credentials in vault<br>(createSecret with username/password)
+    V-->>S: secret_uuid
+    S->>S: Update connection with authDetailsUuid<br>Set status to ACTIVE
+    S-->>U: Login finalized successfully
 
-    %% Get Transactions
+    %% Get Transactions - Fetch & Scrape
     U->>S: GET /users/banks/{id}/transactions<br>Authorization: Bearer apiKey<br>X-Secret: secret
-    S->>KS: Decrypt token
-    S->>B: Fetch latest transactions
-    B-->>S: Transaction data
+    S->>KS: Decrypt Bitwarden token using X-Secret
+    KS-->>S: bitwarden_token
+    S->>V: Fetch stored credentials<br>(getSecret using authDetailsUuid)
+    V-->>S: bank_credentials
+    S->>B: Launch Playwright & execute scraping<br>using retrieved credentials
+    B-->>S: Raw transaction data
+    S->>S: Normalize to standardized format
     S-->>U: Standardized transactions
 ```
 
