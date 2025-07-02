@@ -7,8 +7,26 @@ on:
     branches: [ main ]
 
 jobs:
+  # Check if packages/ directory was modified
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      packages-changed: ${{ steps.changes.outputs.packages }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          packages:
+            - 'packages/**'
+
   build-and-test-monorepo:
     runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.packages-changed == 'true'
     steps:
     - uses: actions/checkout@v4
     - uses: oven-sh/setup-bun@v1
@@ -20,3 +38,11 @@ jobs:
     - run: bun run test:cov
       env:
         API_STORE_ENCRYPTION_KEY: test-encryption-key-32-bytes-long
+
+  # Always run basic checks even when packages aren't modified
+  basic-checks:
+    runs-on: ubuntu-latest
+    needs: check-changes
+    if: needs.check-changes.outputs.packages-changed == 'false'
+    steps:
+    - run: echo "✅ Only documentation or non-package files changed - skipping build and tests"
