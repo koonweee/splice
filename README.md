@@ -207,21 +207,37 @@ bun add @splice/api-client
 import { SpliceApiClient } from '@splice/api-client';
 
 const client = new SpliceApiClient({
-  baseUrl: 'http://localhost:3000',
-  apiKey: 'your-api-key'
+  baseURL: 'http://localhost:3000',
+  jwt: 'your-jwt-token'  // Optional: can be set later
 });
 
 // Create user
-const { user, apiKey } = await client.users.create('username', 'email@example.com');
+const { user, apiKey } = await client.users.createUser({
+  username: 'your_username',
+  email: 'your_email@example.com'  // Optional
+});
 
 // Set JWT for authenticated requests
 client.setJwt(apiKey);
 
+// Store Bitwarden token and get secret
+const secret = await client.apiKeyStore.storeApiKey(
+  'your_bitwarden_token',
+  'BITWARDEN',
+  'your_organisation_id'
+);
+
 // Create bank connection
-const connection = await client.bankConnections.create({
+const connection = await client.bankConnections.createBankConnection({
   bankId: 'dbs',
-  bitwardenSecretId: 'secret-uuid'
+  alias: 'My DBS Account'  // Optional
 });
+
+// Get transactions
+const transactions = await client.bankConnections.getBankConnectionTransactions(
+  connection.id,
+  secret
+);
 ```
 
 ## Architecture
