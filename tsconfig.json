@@ -4,7 +4,8 @@
     "composite": true
   },
   "references": [
-    { "path": "./splice-api" },
-    { "path": "./splice-service" }
+    { "path": "./packages/splice-api" },
+    { "path": "./packages/splice-api-client" },
+    { "path": "./packages/splice-service" }
   ]
 }
