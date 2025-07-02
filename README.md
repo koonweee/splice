@@ -1,213 +1,293 @@
 # Splice 🔗
 
-An open-source, self-hosted, and extensible alternative to Plaid's transaction API. Splice allows you to aggregate and normalize financial transaction data from any source while maintaining full control over your data and infrastructure.
+A self-hosted, extensible financial transaction aggregation API. Alternative to Plaid for banks without OAuth support.
 
-**The current implementation is a POC** with support for checking/savings accounts in DBS Singapore accounts.
+**Current Status**: POC supporting DBS Singapore checking/savings accounts.
 
-> 🚨 **Important**: Splice handles sensitive financial credentials. Before proceeding, please read the [Security](#-security) section to understand the security implications and risks of self-hosting Splice.
+> 🚨 **Security Warning**: Splice handles sensitive financial credentials. Read [Security](#security) before self-hosting.
 
-## 🌟 Features
+## Quick Start
 
-- Self-hosted solution for financial data aggregation
-- [Extensible architecture for adding new data sources](#-adding-new-financial-services)
-  - Playwright integration for financial services without APIs
-
-## 🚀 Getting started
+### Prerequisites
+- [Bun](https://bun.sh) >= 1.0
+- [Docker](https://docker.com) for PostgreSQL
+- [Bitwarden](https://bitwarden.com/products/secrets-manager/) Secrets Manager account
 
 ### Installation
 
-1. Clone the repository:
 ```bash
 git clone <repo-url>
-cd splice-service
+cd splice
+bun install
 ```
 
-2. Install dependencies:
-```bash
-npm install
-```
+### Environment Setup
 
-3. Set up your environment variables:
 ```bash
+cd packages/splice-service
 cp .env.example .env
 ```
 
-Edit the `.env` file with your configuration:
-- `API_STORE_ENCRYPTION_KEY`: Encryption key for sensitive data (generate with `openssl rand -hex 32`)
-- Database configuration:
-  - `POSTGRES_USER`
-  - `POSTGRES_PASSWORD`
-  - `POSTGRES_DB`
-  - `POSTGRES_HOST`
-  - `POSTGRES_PORT`
+Configure `.env`:
+- `API_STORE_ENCRYPTION_KEY` - Generate with `openssl rand -hex 32`
+- `POSTGRES_*` - Database configuration
+- `JWT_SECRET` - Generate with `openssl rand -hex 32`
 
-### Running Splice
+### Development
 
-1. Start the database:
 ```bash
-npm run db
+# Start database
+bun run db
+
+# Start development server
+bun run dev
 ```
 
-2. Start the development server:
-```bash
-npm run dev
-```
+API available at `http://localhost:3000` with docs at `/api`
 
-## 📝 Usage
+## Usage
 
-1. Create a [Bitwarden Secrets Manager](https://bitwarden.com/products/secrets-manager/) account and generate a Machine Account Access Token from their dashboard.
+### Step 1: Create User & Get API Key
 
-2. Create a secret in Bitwarden with your financial service credentials
-  * See `parseCredentialsFromSecret` in [dbs.strategy.ts](splice-service/src/scraper/strategies/dbs.strategy.ts) to understand how secret values should be formatted
-
-2. Create a user in Splice:
 ```bash
 curl -X POST http://localhost:3000/users \
   -H "Content-Type: application/json" \
-  -d '{"username": "your_username", "email": "your_email@example.com"}'
+  -d '{
+    "username": "your_username",
+    "email": "your_email@example.com"
+  }'
 ```
-Response will include your `userUuid`.
 
-3. Store your Bitwarden access token:
+**Response**: You'll receive a user object and an `apiKey` for Bearer authentication:
+```json
+{
+  "user": { ... },
+  "apiKey": "your_api_key"
+}
+```
+
+### Step 2: Store Bitwarden Token & Get X-Secret
+
 ```bash
-curl -X POST http://localhost:3000/api-key-store/<your-user-uuid>?keyType=BITWARDEN \
-  -H "X-Api-Key: your_bitwarden_access_token"
+curl -X POST http://localhost:3000/api-key-store \
+  -H "Authorization: Bearer your_api_key" \
+  -H "X-Api-Key: your_bitwarden_access_token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "keyType": "BITWARDEN",
+    "organisationId": "your_organisation_id"
+  }'
 ```
-Save the returned secret from the `X-Secret` response header.
 
-4. Fetch financial transactions:
+**Response**: Save the `X-Secret` from response headers - you'll need it for credential operations.
+
+### Step 3: Get Available Banks
+
 ```bash
-curl -X POST "http://localhost:3000/transactions/by-account?accountName=dbs&userUuid=<your-user-uuid>" \
-  -H "X-Secret: your_splice_secret"
+curl -X GET http://localhost:3000/banks/available \
+  -H "Authorization: Bearer your_api_key"
 ```
 
-Note: The `accountName` parameter corresponds to the financial service strategy name in the codebase (e.g., ["dbs" for DBS Bank](splice-service/src/scraper/strategies/dbs.strategy.ts)).
+**Response**: List of available banks with their IDs and details.
 
-## 🔄 Flow diagram
+### Step 4: Create Bank Connection
+
+```bash
+curl -X POST http://localhost:3000/users/banks \
+  -H "Authorization: Bearer your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "bankId": "dbs_bank_id",
+    "alias": "My DBS Savings"
+  }'
+```
+
+**Response**: Bank connection object with `connectionId`.
+
+### Step 5: Bank Login (Two-Part Process)
+
+**Initiate Login:**
+```bash
+curl -X POST http://localhost:3000/users/banks/{connectionId}/initiate-login \
+  -H "Authorization: Bearer your_api_key"
+```
+
+**Finalize Login:**
+```bash
+curl -X POST http://localhost:3000/users/banks/{connectionId}/finalize-login \
+  -H "Authorization: Bearer your_api_key" \
+  -H "X-Secret: your_x_secret" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "your_bank_username",
+    "password": "your_bank_password"
+  }'
+```
+
+### Step 6: Fetch Transactions
+
+```bash
+curl -X GET http://localhost:3000/users/banks/{connectionId}/transactions \
+  -H "Authorization: Bearer your_api_key" \
+  -H "X-Secret: your_x_secret"
+```
+
+**Response**: Array of standardized transactions.
+
+## Flow Diagram
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant US as Users Service
+    participant S as Splice API
     participant KS as API Key Store
-    participant V as Vault Service
-    participant S as Scraper Service
+    participant V as Vault (Bitwarden)
     participant B as Bank Website
 
-    %% User Creation
-    U->>US: POST /users<br>{username, email}
-    US-->>U: userUuid
+    %% User Creation & Authentication
+    U->>S: POST /users<br>{username, email}
+    S-->>U: {user, apiKey}
 
     %% Store Bitwarden Token
-    U->>KS: POST /api-key-store/{userUuid}<br>X-Api-Key: bitwarden_token
-    KS->>KS: Encrypt token
-    KS-->>U: secret
+    U->>KS: POST /api-key-store<br>Authorization: Bearer apiKey<br>X-Api-Key: bitwarden_token
+    KS->>KS: Encrypt token with user-specific key
+    KS-->>U: X-Secret header
 
-    %% Fetch Transactions
-    U->>S: POST /transactions/by-account<br>X-Secret: secret
-    S->>KS: Decrypt Bitwarden token
+    %% Get Available Banks
+    U->>S: GET /banks/available<br>Authorization: Bearer apiKey
+    S-->>U: [{id, name, logoUrl}...]
+
+    %% Create Bank Connection
+    U->>S: POST /users/banks<br>Authorization: Bearer apiKey<br>{bankId, alias}
+    S-->>U: {connectionId, status...}
+
+    %% Initiate Login
+    U->>S: POST /users/banks/{id}/initiate-login<br>Authorization: Bearer apiKey
+    S-->>U: Login initialization data
+
+    %% Finalize Login & Fetch Transactions
+    U->>S: POST /users/banks/{id}/finalize-login<br>Authorization: Bearer apiKey<br>X-Secret: secret<br>{username, password}
+    S->>KS: Decrypt Bitwarden token using X-Secret
     KS-->>S: bitwarden_token
-    S->>V: Get bank credentials<br>using Bitwarden token
+    S->>V: Get bank credentials using token
     V-->>S: bank_credentials
-    S->>B: Automated login & scraping<br>using Playwright
+    S->>B: Automated login & scraping via Playwright
     B-->>S: Raw transaction data
-    S->>S: Normalize data
+    S->>S: Normalize transactions
+    S-->>U: Login success
+
+    %% Get Transactions
+    U->>S: GET /users/banks/{id}/transactions<br>Authorization: Bearer apiKey<br>X-Secret: secret
+    S->>KS: Decrypt token
+    S->>B: Fetch latest transactions
+    B-->>S: Transaction data
     S-->>U: Standardized transactions
 ```
 
-## 🔒 Security
-> ⚠️ Please submit an issue for recommendations on improving security. Options are limited for banks that do not provide OAuth support
+## API Client
 
-Splice uses AES-256-GCM encryption to securely store Bitwarden access tokens. Here's how it works:
+Install the TypeScript client:
 
-1. A master encryption key is derived from your `API_STORE_ENCRYPTION_KEY` environment variable
-2. For each user, a unique encryption key is derived using:
-   - PBKDF2 key derivation with 100,000 iterations
-   - SHA-256 hashing
-   - The user's UUID as salt
-3. When storing an API key:
-   - A random initialization vector (IV) is generated
-   - The data is encrypted using AES-256-GCM with the user's unique key
-   - The IV and authentication tag are combined to create a secret returned to the user
-4. For subsequent requests for financial data:
-   - The user provides their secret in the X-Secret header
-   - Splice uses this to decrypt their stored API keys and retrieve the relevant financial service's credentials
+```bash
+bun add @splice/api-client
+```
 
-The implementation can be found in [splice-service/src/api-key-store/api-key-store.service.ts](splice-service/src/api-key-store/api-key-store.service.ts).
+```typescript
+import { SpliceApiClient } from '@splice/api-client';
 
-> ⚠️ **Security Considerations**: While the Bitwarden access token is encrypted, storing access tokens that can retrieve financial service credentials represents a significant security risk.
->
-> **Do consider this risk when deciding to self-host Splice**
+const client = new SpliceApiClient({
+  baseUrl: 'http://localhost:3000',
+  apiKey: 'your-api-key'
+});
 
-## 🔧 Adding a new financial service
+// Create user
+const { user, apiKey } = await client.users.create('username', 'email@example.com');
 
-Splice is designed to be extensible. You can add support for new financial institutions by implementing a scraping strategy:
+// Set JWT for authenticated requests
+client.setJwt(apiKey);
 
-1. Create a new strategy file in `splice-service/src/scraper/strategies/`:
+// Create bank connection
+const connection = await client.bankConnections.create({
+  bankId: 'dbs',
+  bitwardenSecretId: 'secret-uuid'
+});
+```
+
+## Architecture
+
+```
+splice/
+├── packages/
+│   ├── splice-api/           # Shared TypeScript types
+│   ├── splice-api-client/    # HTTP client library
+│   └── splice-service/       # Main NestJS application
+│       ├── src/
+│       │   ├── auth/         # JWT authentication
+│       │   ├── users/        # User management
+│       │   ├── bank-connections/ # Bank connection management
+│       │   ├── api-key-store/    # Encrypted credential storage
+│       │   ├── vault/        # Bitwarden integration
+│       │   └── scraper/      # Web scraping + strategies
+│       └── test/             # Unit and E2E tests
+```
+
+**Core Flow**:
+1. User creates account → receives JWT API key
+2. User stores encrypted Bitwarden token
+3. User creates bank connection with Bitwarden secret ID
+4. Transactions fetched via automated browser scraping
+
+## Adding Banks
+
+Create strategy in `packages/splice-service/src/scraper/strategies/`:
+
 ```typescript
 @Injectable()
 export class YourBankStrategy implements ScraperStrategy {
-  name = 'your_bank';  // This will be the accountName in API requests
+  name = 'your_bank';
   startUrl = 'https://your-bank-login-url.com';
 
   async scrape(secret: string, page: Page, logger: Logger): Promise<ScrapedData> {
-    // 1. Parse credentials from secret (stored in Bitwarden)
-    // 2. Navigate through login flow
-    // 3. Extract and normalize transaction data
-    // 4. Return standardized transaction data
+    // 1. Parse credentials from Bitwarden secret
+    // 2. Navigate login flow
+    // 3. Extract transaction data
+    // 4. Return normalized transactions
   }
 }
 ```
 
-2. Register your strategy in [splice-service/src/scraper/scraper.module.ts](splice-service/src/scraper/scraper.module.ts):
-```typescript
-const STRATEGIES = [DBSStrategy, YourBankStrategy] as const;
+Register in `scraper.module.ts` and add secret UUID to config.
+
+## Development
+
+```bash
+# Run tests
+bun run test
+bun run test:e2e
+
+# Lint and format
+bun run lint
+bun run format
+
+# Build
+bun run build
 ```
 
-3. Add the secret UUID to your environment configuration:
-```typescript
-bitwarden: {
-  secrets: {
-    dbs: 'existing-uuid',
-    your_bank: 'your-secret-uuid'
-  }
-}
-```
+## Security
 
-The scraper service will automatically:
-- Initialize a Playwright browser instance
-- Load your strategy when requested
-- Fetch credentials from Bitwarden
-- Provide error handling and logging
+**Encryption**: AES-256-GCM with PBKDF2 key derivation (100k iterations)
+- Master key from `API_STORE_ENCRYPTION_KEY`
+- Per-user keys derived with UUID salt
+- Bitwarden tokens encrypted at rest
 
-See [splice-service/src/scraper/strategies/dbs.strategy.ts](splice-service/src/scraper/strategies/dbs.strategy.ts) for a complete example implementation.
+**Authentication**: JWT Bearer tokens with configurable expiration
 
-## 🚀 Future improvements
-- Implement 2FA requirement when attempting to decrypt access tokens using secrets
-  - Adds an additional layer of security, mitigate risks if a secret is compromised
+> ⚠️ **Risk**: Self-hosting credential aggregation carries inherent security risks. Ensure proper infrastructure security.
 
-- Store list of financial services per user and their corresponding secret UUIDs
+## Technologies
 
-## 📁 Project structure
-
-```
-splice
-├── splice-api             # Shared types and interfaces
-└── splice-service         # Main service implementation
-    ├── src
-    │   ├── api-key-store  # Encrypted storage for API keys
-    │   ├── scraper        # Web scraping infrastructure
-    │   │   └── strategies # Bank-specific scraping implementations
-    │   ├── users          # User management
-    │   └── vault          # Bitwarden Secrets Manager integration
-    ├── downloads          # Temporary storage for downloaded statements
-    └── screenshots        # Optional scraping debug screenshots
-```
-
-## 🏗️ Architecture
-
-Splice is built on:
-- NestJS + TypeORM for backend
-- PostgreSQL for data storage
-- Playwright for scraper functionality
-- Bitwarden Secrets Manager to store bank login details
+- **Backend**: NestJS + TypeORM + PostgreSQL
+- **Scraping**: Playwright
+- **Security**: Bitwarden Secrets Manager
+- **Auth**: JWT with Passport
+- **Docs**: Scalar API Reference
