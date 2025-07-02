@@ -35,15 +35,24 @@ Configure `.env`:
 
 ### Development
 
+**Start the database:**
 ```bash
-# Start database
+# Start PostgreSQL with Docker Compose (detached)
 bun run db
+```
 
-# Start development server
+**Start the development server:**
+```bash
+# In a new terminal, start the NestJS development server
 bun run dev
 ```
 
-API available at `http://localhost:3000` with docs at `/api`
+**Access the application:**
+- **API Base URL**: `http://localhost:3000`
+- **Scalar API Documentation**: `http://localhost:3000/api`
+- **Health Check**: `http://localhost:3000/health`
+
+The API documentation provides an interactive interface to test all endpoints directly from your browser.
 
 ## Usage
 
@@ -262,16 +271,41 @@ Register in `scraper.module.ts` and add secret UUID to config.
 
 ## Development
 
+**Local Development Setup:**
 ```bash
-# Run tests
+# Start PostgreSQL database
+bun run db
+
+# In another terminal, start development server with hot reload
+bun run dev
+
+# Access Scalar API docs at http://localhost:3000/api
+```
+
+**Testing:**
+```bash
+# Run all tests (unit + E2E)
 bun run test
+
+# Run only E2E tests
 bun run test:e2e
 
-# Lint and format
+# Run tests with coverage
+bun run test:cov
+
+# Run tests in watch mode
+bun run test:watch
+```
+
+**Code Quality:**
+```bash
+# Lint and auto-fix issues
 bun run lint
+
+# Format code with Biome
 bun run format
 
-# Build
+# Build for production
 bun run build
 ```
 
