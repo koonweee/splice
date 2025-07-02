@@ -56,7 +56,7 @@ describe('Bank Management (e2e)', () => {
       status: BankConnectionStatus.PENDING_AUTH,
       alias: 'My Test Bank',
       lastSync: undefined,
-      authDetailsUuid: uuidv4(),
+      authDetailsUuid: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
       bank: testBank,
@@ -168,16 +168,14 @@ describe('Bank Management (e2e)', () => {
       expect(bankRegistryService.findAllActive).toHaveBeenCalledTimes(1);
 
       // Step 2: Create a bank connection for the user
-      const authDetailsUuid = uuidv4();
       const createConnectionRequest = {
         bankId: testBank.id,
         alias: 'My Test Bank',
-        authDetailsUuid,
       };
 
       const mockCreatedConnection = {
         ...testConnection,
-        authDetailsUuid,
+        authDetailsUuid: undefined,
       };
 
       bankConnectionService.create.mockResolvedValue(mockCreatedConnection);
@@ -256,7 +254,6 @@ describe('Bank Management (e2e)', () => {
       const createRequest = {
         bankId: testBank.id,
         alias: 'Test Connection',
-        authDetailsUuid: uuidv4(),
       };
 
       const mockConnection = {
@@ -283,7 +280,6 @@ describe('Bank Management (e2e)', () => {
       const createRequest = {
         bankId: invalidBankId,
         alias: 'Invalid Bank',
-        authDetailsUuid: uuidv4(),
       };
 
       // Mock service to throw NotFoundException
