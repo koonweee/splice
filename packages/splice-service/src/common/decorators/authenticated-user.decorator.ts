@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import { AuthenticatedRequest } from '@splice/api';
+import { AuthenticatedRequest } from 'splice-api';
 
 /**
  * Decorator to get user on requests that have been authenticated by JWT

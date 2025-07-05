@@ -1,5 +1,5 @@
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, DataSourceType } from '@splice/api';
+import { Bank, DataSourceType } from 'splice-api';
 import { BankRegistryController } from '../../../src/bank-registry/bank-registry.controller';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
 

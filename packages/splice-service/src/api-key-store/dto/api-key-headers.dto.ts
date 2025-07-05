@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateApiKeyHeaders } from '@splice/api';
+import { CreateApiKeyHeaders } from 'splice-api';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class ApiKeyHeadersDto implements CreateApiKeyHeaders {

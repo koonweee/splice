@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import type { User } from '@splice/api';
+import type { User } from 'splice-api';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserService } from '../users/user.service';
 

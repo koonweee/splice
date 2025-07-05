@@ -1,4 +1,4 @@
-import { Bank, DataSourceType } from '@splice/api';
+import { Bank, DataSourceType } from 'splice-api';
 import { Column, Entity } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 

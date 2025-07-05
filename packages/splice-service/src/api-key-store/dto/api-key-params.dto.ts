@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateApiKeyParams } from '@splice/api';
+import { CreateApiKeyParams } from 'splice-api';
 import { IsUUID } from 'class-validator';
 
 export class ApiKeyParamsDto implements CreateApiKeyParams {

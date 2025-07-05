@@ -1,6 +1,6 @@
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Bank, DataSourceType } from '@splice/api';
+import { Bank, DataSourceType } from 'splice-api';
 import type { Repository } from 'typeorm';
 import { BankEntity } from '../../../src/bank-registry/bank.entity';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';
@@ -114,16 +114,17 @@ describe('BankRegistryService', () => {
 
   describe('seedBankRegistry', () => {
     it('should skip seeding when banks already exist', async () => {
-      repository.count.mockResolvedValue(1);
+      repository.count.mockResolvedValue(2); // Both DBS and Plaid banks exist
 
       await service.onModuleInit();
 
       expect(repository.count).toHaveBeenCalled();
+      expect(repository.findOne).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
       expect(repository.save).not.toHaveBeenCalled();
     });
 
-    it('should seed DBS bank when registry is empty', async () => {
+    it('should seed both DBS and Plaid banks when registry is empty', async () => {
       repository.count.mockResolvedValue(0);
       repository.findOne.mockResolvedValue(null);
       repository.create.mockReturnValue(mockBankRegistry);
@@ -132,28 +133,36 @@ describe('BankRegistryService', () => {
       await service.onModuleInit();
 
       expect(repository.count).toHaveBeenCalled();
-      expect(repository.findOne).toHaveBeenCalledWith({
-        where: { scraperIdentifier: 'dbs' },
+      expect(repository.findOne).toHaveBeenNthCalledWith(1, {
+        where: { name: 'DBS Bank', sourceType: DataSourceType.SCRAPER },
       });
-      expect(repository.create).toHaveBeenCalledWith({
+      expect(repository.findOne).toHaveBeenNthCalledWith(2, {
+        where: { name: 'Plaid', sourceType: DataSourceType.PLAID },
+      });
+      expect(repository.create).toHaveBeenNthCalledWith(1, {
         name: 'DBS Bank',
         sourceType: DataSourceType.SCRAPER,
         scraperIdentifier: 'dbs',
         isActive: true,
       });
-      expect(repository.save).toHaveBeenCalledWith(mockBankRegistry);
+      expect(repository.create).toHaveBeenNthCalledWith(2, {
+        name: 'Plaid',
+        sourceType: DataSourceType.PLAID,
+        isActive: true,
+      });
+      expect(repository.save).toHaveBeenCalledTimes(2);
     });
 
     it('should not seed bank if it already exists', async () => {
-      repository.count.mockResolvedValue(0);
-      repository.findOne.mockResolvedValue(mockBankRegistry);
+      repository.count.mockResolvedValue(1); // Only one bank exists, need to seed the other
+      repository.findOne.mockResolvedValueOnce(mockBankRegistry).mockResolvedValueOnce(null);
 
       await service.onModuleInit();
 
       expect(repository.count).toHaveBeenCalled();
-      expect(repository.findOne).toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(repository.findOne).toHaveBeenCalledTimes(2);
+      expect(repository.create).toHaveBeenCalledTimes(1); // Only one bank gets created
+      expect(repository.save).toHaveBeenCalledTimes(1);
     });
   });
 });

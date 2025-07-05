@@ -1,4 +1,4 @@
-import { DataSourceType } from '@splice/api';
+import { DataSourceType } from 'splice-api';
 import { BankRegistryClient } from '../../src/client/bank-registry-client';
 import { createMockResponse, mockFetch, mockFetchError } from '../mocks/fetch';
 

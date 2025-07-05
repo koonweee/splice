@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { BankConnectionByIdParams } from '@splice/api';
+import { BankConnectionByIdParams } from 'splice-api';
 import { IsUUID } from 'class-validator';
 
 export class BankConnectionByIdParamsDto implements BankConnectionByIdParams {

@@ -1,7 +1,7 @@
 import { HttpException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from 'splice-api';
 import type { Browser, Page } from 'playwright';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';
 import { BankRegistryService } from '../../../src/bank-registry/bank-registry.service';

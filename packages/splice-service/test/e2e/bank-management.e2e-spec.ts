@@ -4,7 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthGuard, PassportModule } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from 'splice-api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';

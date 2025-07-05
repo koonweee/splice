@@ -1,5 +1,5 @@
 import type { Logger } from '@nestjs/common';
-import type { ScrapedData } from '@splice/api';
+import type { ScrapedData } from 'splice-api';
 import type { Page } from 'playwright';
 
 export interface ScraperStrategy {

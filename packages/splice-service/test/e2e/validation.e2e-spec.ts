@@ -2,7 +2,7 @@ import type { ExecutionContext, INestApplication } from '@nestjs/common';
 import { ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Test } from '@nestjs/testing';
-import { ApiKeyType, BankConnection, User } from '@splice/api';
+import { ApiKeyType, BankConnection, User } from 'splice-api';
 import request from 'supertest';
 import type { App } from 'supertest/types';
 import { v4 as uuidv4 } from 'uuid';

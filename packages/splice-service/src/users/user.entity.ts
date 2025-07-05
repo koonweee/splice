@@ -1,4 +1,4 @@
-import { User } from '@splice/api';
+import { User } from 'splice-api';
 import { Column, Entity } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 

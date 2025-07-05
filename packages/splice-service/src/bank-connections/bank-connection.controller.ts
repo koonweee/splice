@@ -20,7 +20,7 @@ import {
   StandardizedAccount,
   StandardizedTransaction,
   User,
-} from '@splice/api';
+} from 'splice-api';
 import { ApiKeyStoreService } from '../api-key-store/api-key-store.service';
 import { AuthenticatedUser } from '../common/decorators';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';

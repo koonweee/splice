@@ -1,11 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  BankConnection,
-  BankConnectionStatus,
-  CreateBankConnectionRequest,
-  StandardizedTransaction,
-} from '@splice/api';
+import { BankConnection, BankConnectionStatus, CreateBankConnectionRequest, StandardizedTransaction } from 'splice-api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';

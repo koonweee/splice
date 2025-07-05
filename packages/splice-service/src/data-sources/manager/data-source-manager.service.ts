@@ -5,7 +5,7 @@ import {
   DataSourceType,
   StandardizedAccount,
   StandardizedTransaction,
-} from '@splice/api';
+} from 'splice-api';
 import { DATA_SOURCE_ADAPTERS } from '../adapters/adapter.constants';
 
 @Injectable()

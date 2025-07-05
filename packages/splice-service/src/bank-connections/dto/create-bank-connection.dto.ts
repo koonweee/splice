@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateBankConnectionRequest } from '@splice/api';
+import { CreateBankConnectionRequest } from 'splice-api';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateBankConnectionDto implements CreateBankConnectionRequest {

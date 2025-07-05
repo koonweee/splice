@@ -1,5 +1,5 @@
 import { forwardRef, Inject, Logger, Module, OnModuleInit } from '@nestjs/common';
-import { DataSourceAdapter, DataSourceType } from '@splice/api';
+import { DataSourceAdapter, DataSourceType } from 'splice-api';
 import { ScraperModule } from '../scraper/scraper.module';
 import { VaultModule } from '../vault/vault.module';
 import { DATA_SOURCE_ADAPTERS } from './adapters/adapter.constants';

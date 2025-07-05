@@ -1,6 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Bank, DataSourceType } from '@splice/api';
+import { Bank, DataSourceType } from 'splice-api';
 import { Repository } from 'typeorm';
 import { BankEntity } from './bank.entity';
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
+import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from 'splice-api';
 import {
   Configuration,
   CountryCode,

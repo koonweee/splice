@@ -1,7 +1,7 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AvailableBankResponse } from '@splice/api';
+import { AvailableBankResponse } from 'splice-api';
 import { BankRegistryService } from './bank-registry.service';
 
 @ApiTags('banks')

@@ -1,7 +1,7 @@
 import { Logger, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus, DataSourceType } from 'splice-api';
 import type { Repository } from 'typeorm';
 import { BankConnectionEntity } from '../../../src/bank-connections/bank-connection.entity';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';

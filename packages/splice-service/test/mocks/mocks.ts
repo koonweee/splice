@@ -1,4 +1,4 @@
-import { User } from '@splice/api';
+import { User } from 'splice-api';
 
 export const MOCK_USER_ID = 'test-user-id';
 export const MOCK_USER: User = {

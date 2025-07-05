@@ -1,6 +1,6 @@
 import { HttpException, NotFoundException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { ApiKeyType, Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from '@splice/api';
+import { ApiKeyType, Bank, BankConnection, BankConnectionStatus, DataSourceType, User } from 'splice-api';
 import { ApiKeyStoreService } from '../../../src/api-key-store/api-key-store.service';
 import { BankConnectionController } from '../../../src/bank-connections/bank-connection.controller';
 import { BankConnectionService } from '../../../src/bank-connections/bank-connection.service';

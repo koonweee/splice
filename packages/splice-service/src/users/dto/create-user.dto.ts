@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateUserRequest } from '@splice/api';
+import { CreateUserRequest } from 'splice-api';
 import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto implements CreateUserRequest {
