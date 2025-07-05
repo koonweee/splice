@@ -13,6 +13,7 @@ describe('SpliceApiClient', () => {
   it('should initialize all sub-clients', () => {
     expect(client.users).toBeDefined();
     expect(client.bankConnections).toBeDefined();
+    expect(client.bankRegistry).toBeDefined();
     expect(client.apiKeyStore).toBeDefined();
   });
 
@@ -23,6 +24,7 @@ describe('SpliceApiClient', () => {
 
     expect(client.users['jwt']).toBe(newToken);
     expect(client.bankConnections['jwt']).toBe(newToken);
+    expect(client.bankRegistry['jwt']).toBe(newToken);
     expect(client.apiKeyStore['jwt']).toBe(newToken);
   });
 
@@ -32,6 +34,7 @@ describe('SpliceApiClient', () => {
 
     expect(client.users['jwt']).toBeUndefined();
     expect(client.bankConnections['jwt']).toBeUndefined();
+    expect(client.bankRegistry['jwt']).toBeUndefined();
     expect(client.apiKeyStore['jwt']).toBeUndefined();
   });
 
@@ -51,6 +54,7 @@ describe('SpliceApiClient', () => {
     expect(customClient.users['jwt']).toBe('custom-token');
 
     expect(customClient.bankConnections['baseURL']).toBe('http://api.example.com');
+    expect(customClient.bankRegistry['baseURL']).toBe('http://api.example.com');
     expect(customClient.apiKeyStore['baseURL']).toBe('http://api.example.com');
   });
 });
