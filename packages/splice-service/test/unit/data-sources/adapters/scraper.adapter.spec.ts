@@ -250,10 +250,10 @@ describe('ScraperAdapter', () => {
     it('should fetch and transform transactions successfully', async () => {
       const result = await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(scraperService.scrapeByBankConnection).toHaveBeenCalledWith(
@@ -273,6 +273,7 @@ describe('ScraperAdapter', () => {
         amount: 100.5, // Absolute value
         currency: 'SGD',
         type: 'CREDIT', // Negative amount = CREDIT
+        pending: false,
         metadata: {
           originalAmount: -100.5,
           reference: 'REF001',
@@ -294,6 +295,7 @@ describe('ScraperAdapter', () => {
         amount: 2500.0,
         currency: 'SGD',
         type: 'DEBIT', // Positive amount = DEBIT
+        pending: false,
         metadata: {
           originalAmount: 2500.0,
           reference: 'REF002',
@@ -315,6 +317,7 @@ describe('ScraperAdapter', () => {
         amount: 45.25, // Absolute value
         currency: 'SGD',
         type: 'CREDIT', // Negative amount = CREDIT
+        pending: false,
         metadata: {
           originalAmount: -45.25,
           reference: 'REF003',
@@ -333,10 +336,10 @@ describe('ScraperAdapter', () => {
 
       const result = await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(result).toEqual([]);
@@ -357,10 +360,10 @@ describe('ScraperAdapter', () => {
 
       const result = await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(result).toEqual([]);
@@ -383,10 +386,10 @@ describe('ScraperAdapter', () => {
 
       const result = await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(result).toEqual([]);
@@ -397,7 +400,7 @@ describe('ScraperAdapter', () => {
       scraperService.scrapeByBankConnection.mockRejectedValue(scraperError);
 
       await expect(
-        adapter.fetchTransactions(mockBankConnection, mockAccountId, mockStartDate, mockEndDate, mockVaultAccessToken),
+        adapter.fetchTransactions(mockBankConnection, mockStartDate, mockEndDate, mockVaultAccessToken, mockAccountId),
       ).rejects.toThrow('Scraping failed');
 
       expect(scraperService.scrapeByBankConnection).toHaveBeenCalledWith(
@@ -412,10 +415,10 @@ describe('ScraperAdapter', () => {
 
       await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(logSpy).toHaveBeenCalledWith(
@@ -474,10 +477,10 @@ describe('ScraperAdapter', () => {
     it('should delegate to fetchTransactions method', async () => {
       const result = await adapter.fetchTransactionsWithToken(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(scraperService.scrapeByBankConnection).toHaveBeenCalledWith(
@@ -494,10 +497,10 @@ describe('ScraperAdapter', () => {
 
       await adapter.fetchTransactionsWithToken(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(logSpy).toHaveBeenCalledWith(
@@ -513,10 +516,10 @@ describe('ScraperAdapter', () => {
       await expect(
         adapter.fetchTransactionsWithToken(
           mockBankConnection,
-          mockAccountId,
           mockStartDate,
           mockEndDate,
           mockVaultAccessToken,
+          mockAccountId,
         ),
       ).rejects.toThrow('Network timeout');
 

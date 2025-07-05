@@ -529,16 +529,132 @@ describe('PlaidAdapter', () => {
   });
 
   describe('fetchTransactions', () => {
-    it('should return empty array for plaid connection', async () => {
+    const mockPlaidTransactionsResponse = {
+      data: {
+        transactions: [
+          {
+            transaction_id: 'tx-123',
+            account_id: 'account-123',
+            date: '2024-01-15',
+            datetime: '2024-01-15T10:30:00Z',
+            name: 'Coffee Shop Purchase',
+            merchant_name: 'Starbucks',
+            pending: false,
+            logo_url: 'https://example.com/logo.png',
+            website: 'https://starbucks.com',
+            amount: 5.25,
+            iso_currency_code: 'USD',
+            unofficial_currency_code: null,
+          },
+          {
+            transaction_id: 'tx-456',
+            account_id: 'account-123',
+            date: '2024-01-16',
+            datetime: null,
+            name: 'ATM Withdrawal',
+            merchant_name: null,
+            pending: true,
+            logo_url: null,
+            website: null,
+            amount: 100.0,
+            iso_currency_code: 'USD',
+            unofficial_currency_code: null,
+          },
+        ],
+      },
+    };
+
+    beforeEach(() => {
+      mockVaultService.getSecret.mockResolvedValue(JSON.stringify({ accessToken: 'access-token-123' }));
+      mockPlaidApiClient.transactionsGet = jest.fn().mockResolvedValue(mockPlaidTransactionsResponse);
+    });
+
+    it('should fetch transactions successfully', async () => {
       const result = await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
-      expect(result).toEqual([]);
+      expect(mockVaultService.getSecret).toHaveBeenCalledWith('auth-uuid-123', mockVaultAccessToken);
+      expect(mockPlaidApiClient.transactionsGet).toHaveBeenCalledWith({
+        access_token: 'access-token-123',
+        start_date: '2024-01-01',
+        end_date: '2024-01-31',
+        options: {
+          account_ids: ['account-123'],
+        },
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: 'tx-123',
+        accountId: 'account-123',
+        date: '2024-01-15',
+        datetime: '2024-01-15T10:30:00Z',
+        description: 'Coffee Shop Purchase',
+        merchantName: 'Starbucks',
+        pending: false,
+        logoUrl: 'https://example.com/logo.png',
+        websiteUrl: 'https://starbucks.com',
+        amount: 5.25,
+        isoCurrencyCode: 'USD',
+        unofficialCurrencyCode: undefined,
+        type: 'DEBIT', // Positive amount = DEBIT
+      });
+      expect(result[1]).toEqual({
+        id: 'tx-456',
+        accountId: 'account-123',
+        date: '2024-01-16',
+        datetime: undefined,
+        description: 'ATM Withdrawal',
+        merchantName: undefined,
+        pending: true,
+        logoUrl: undefined,
+        websiteUrl: undefined,
+        amount: 100.0,
+        isoCurrencyCode: 'USD',
+        unofficialCurrencyCode: undefined,
+        type: 'DEBIT', // Positive amount = DEBIT
+      });
+    });
+
+    it('should throw error when authDetailsUuid is missing', async () => {
+      const connectionWithoutAuth = { ...mockBankConnection, authDetailsUuid: undefined };
+
+      await expect(
+        adapter.fetchTransactions(
+          connectionWithoutAuth,
+          mockStartDate,
+          mockEndDate,
+          mockVaultAccessToken,
+          mockAccountId,
+        ),
+      ).rejects.toThrow('Auth details UUID is not set for connection');
+    });
+
+    it('should throw error when accountId is missing', async () => {
+      await expect(
+        adapter.fetchTransactions(mockBankConnection, mockStartDate, mockEndDate, mockVaultAccessToken),
+      ).rejects.toThrow('Account ID is required for plaid transactions');
+    });
+
+    it('should throw error when vault secret is invalid JSON', async () => {
+      mockVaultService.getSecret.mockResolvedValue('invalid-json');
+
+      await expect(
+        adapter.fetchTransactions(mockBankConnection, mockStartDate, mockEndDate, mockVaultAccessToken, mockAccountId),
+      ).rejects.toThrow();
+    });
+
+    it('should throw error when auth details validation fails', async () => {
+      mockVaultService.getSecret.mockResolvedValue(JSON.stringify({ invalidField: 'value' }));
+
+      await expect(
+        adapter.fetchTransactions(mockBankConnection, mockStartDate, mockEndDate, mockVaultAccessToken, mockAccountId),
+      ).rejects.toThrow('Validation failed');
     });
 
     it('should log transaction fetching', async () => {
@@ -546,15 +662,260 @@ describe('PlaidAdapter', () => {
 
       await adapter.fetchTransactions(
         mockBankConnection,
-        mockAccountId,
         mockStartDate,
         mockEndDate,
         mockVaultAccessToken,
+        mockAccountId,
       );
 
       expect(logSpy).toHaveBeenCalledWith(
         `Fetching transactions for plaid connection ${mockConnectionId}, account ${mockAccountId} from ${mockStartDate.toISOString()} to ${mockEndDate.toISOString()}`,
       );
+      expect(logSpy).toHaveBeenCalledWith(
+        `Fetched 2 transactions for plaid connection ${mockConnectionId}`,
+        mockPlaidTransactionsResponse.data.transactions,
+      );
+    });
+
+    it('should handle plaid API errors', async () => {
+      const apiError = new Error('Plaid API timeout');
+      mockPlaidApiClient.transactionsGet.mockRejectedValue(apiError);
+
+      await expect(
+        adapter.fetchTransactions(mockBankConnection, mockStartDate, mockEndDate, mockVaultAccessToken, mockAccountId),
+      ).rejects.toThrow('Plaid API timeout');
+    });
+  });
+
+  describe('plaidTransactionToStandardizedTransaction', () => {
+    it('should convert plaid transaction to standardized transaction', () => {
+      const plaidTransaction = {
+        transaction_id: 'tx-789',
+        account_id: 'account-456',
+        date: '2024-01-20',
+        datetime: '2024-01-20T14:30:00Z',
+        name: 'Amazon Purchase',
+        merchant_name: 'Amazon',
+        pending: false,
+        logo_url: 'https://example.com/amazon-logo.png',
+        website: 'https://amazon.com',
+        amount: 25.99,
+        iso_currency_code: 'USD',
+        unofficial_currency_code: null,
+        // Required properties for Plaid Transaction type
+        location: {},
+        payment_meta: {},
+        pending_transaction_id: null,
+        account_owner: null,
+        category: [],
+        category_id: null,
+        check_number: null,
+        original_description: null,
+      } as any;
+
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+
+      expect(result).toEqual({
+        id: 'tx-789',
+        accountId: 'account-456',
+        date: '2024-01-20',
+        datetime: '2024-01-20T14:30:00Z',
+        description: 'Amazon Purchase',
+        merchantName: 'Amazon',
+        pending: false,
+        logoUrl: 'https://example.com/amazon-logo.png',
+        websiteUrl: 'https://amazon.com',
+        amount: 25.99,
+        isoCurrencyCode: 'USD',
+        unofficialCurrencyCode: undefined,
+        type: 'DEBIT', // Positive amount = DEBIT
+      });
+    });
+
+    it('should handle transactions with null optional fields', () => {
+      const plaidTransaction = {
+        transaction_id: 'tx-null-fields',
+        account_id: 'account-null',
+        date: '2024-01-21',
+        datetime: null,
+        name: 'Cash Withdrawal',
+        merchant_name: null,
+        pending: true,
+        logo_url: null,
+        website: null,
+        amount: 50.0,
+        iso_currency_code: null,
+        unofficial_currency_code: null,
+        // Required properties for Plaid Transaction type
+        location: {},
+        payment_meta: {},
+        pending_transaction_id: null,
+        account_owner: null,
+        category: [],
+        category_id: null,
+        check_number: null,
+        original_description: null,
+      } as any;
+
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+
+      expect(result).toEqual({
+        id: 'tx-null-fields',
+        accountId: 'account-null',
+        date: '2024-01-21',
+        datetime: undefined,
+        description: 'Cash Withdrawal',
+        merchantName: undefined,
+        pending: true,
+        logoUrl: undefined,
+        websiteUrl: undefined,
+        amount: 50.0,
+        isoCurrencyCode: undefined,
+        unofficialCurrencyCode: undefined,
+        type: 'DEBIT', // Positive amount = DEBIT
+      });
+    });
+
+    it('should correctly identify credit transactions (negative amounts)', () => {
+      const plaidTransaction = {
+        transaction_id: 'tx-credit',
+        account_id: 'account-credit',
+        date: '2024-01-22',
+        datetime: '2024-01-22T09:00:00Z',
+        name: 'Refund',
+        merchant_name: 'Store',
+        pending: false,
+        logo_url: null,
+        website: null,
+        amount: -15.75, // Negative amount
+        iso_currency_code: 'USD',
+        unofficial_currency_code: null,
+        // Required properties for Plaid Transaction type
+        location: {},
+        payment_meta: {},
+        pending_transaction_id: null,
+        account_owner: null,
+        category: [],
+        category_id: null,
+        check_number: null,
+        original_description: null,
+      } as any;
+
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+
+      expect(result).toEqual({
+        id: 'tx-credit',
+        accountId: 'account-credit',
+        date: '2024-01-22',
+        datetime: '2024-01-22T09:00:00Z',
+        description: 'Refund',
+        merchantName: 'Store',
+        pending: false,
+        logoUrl: undefined,
+        websiteUrl: undefined,
+        amount: -15.75,
+        isoCurrencyCode: 'USD',
+        unofficialCurrencyCode: undefined,
+        type: 'CREDIT', // Negative amount = CREDIT
+      });
+    });
+
+    it('should handle zero amounts', () => {
+      const plaidTransaction = {
+        transaction_id: 'tx-zero',
+        account_id: 'account-zero',
+        date: '2024-01-23',
+        datetime: '2024-01-23T12:00:00Z',
+        name: 'Balance Inquiry',
+        merchant_name: 'Bank',
+        pending: false,
+        logo_url: null,
+        website: null,
+        amount: 0,
+        iso_currency_code: 'USD',
+        unofficial_currency_code: null,
+        // Required properties for Plaid Transaction type
+        location: {},
+        payment_meta: {},
+        pending_transaction_id: null,
+        account_owner: null,
+        category: [],
+        category_id: null,
+        check_number: null,
+        original_description: null,
+      } as any;
+
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+
+      expect(result).toEqual({
+        id: 'tx-zero',
+        accountId: 'account-zero',
+        date: '2024-01-23',
+        datetime: '2024-01-23T12:00:00Z',
+        description: 'Balance Inquiry',
+        merchantName: 'Bank',
+        pending: false,
+        logoUrl: undefined,
+        websiteUrl: undefined,
+        amount: 0,
+        isoCurrencyCode: 'USD',
+        unofficialCurrencyCode: undefined,
+        type: 'CREDIT', // Zero amount = CREDIT (amount <= 0)
+      });
+    });
+  });
+
+  describe('getAuthDetails', () => {
+    it('should retrieve and validate auth details successfully', async () => {
+      const validAuthDetails = JSON.stringify({ accessToken: 'valid-access-token' });
+      mockVaultService.getSecret.mockResolvedValue(validAuthDetails);
+
+      const result = await adapter.getAuthDetails(mockBankConnection, mockVaultAccessToken);
+
+      expect(mockVaultService.getSecret).toHaveBeenCalledWith('auth-uuid-123', mockVaultAccessToken);
+      expect(result).toEqual({ accessToken: 'valid-access-token' });
+    });
+
+    it('should throw error when authDetailsUuid is missing', async () => {
+      const connectionWithoutAuth = { ...mockBankConnection, authDetailsUuid: undefined };
+
+      await expect(adapter.getAuthDetails(connectionWithoutAuth, mockVaultAccessToken)).rejects.toThrow(
+        'Auth details UUID is not set for connection',
+      );
+    });
+
+    it('should throw error when vault secret is invalid JSON', async () => {
+      mockVaultService.getSecret.mockResolvedValue('invalid-json');
+
+      await expect(adapter.getAuthDetails(mockBankConnection, mockVaultAccessToken)).rejects.toThrow();
+    });
+
+    it('should throw error when auth details are missing accessToken', async () => {
+      const invalidAuthDetails = JSON.stringify({ wrongField: 'value' });
+      mockVaultService.getSecret.mockResolvedValue(invalidAuthDetails);
+
+      await expect(adapter.getAuthDetails(mockBankConnection, mockVaultAccessToken)).rejects.toThrow(
+        'Validation failed',
+      );
+    });
+
+    it('should throw error when accessToken is empty', async () => {
+      const invalidAuthDetails = JSON.stringify({ accessToken: '' });
+      mockVaultService.getSecret.mockResolvedValue(invalidAuthDetails);
+
+      await expect(adapter.getAuthDetails(mockBankConnection, mockVaultAccessToken)).rejects.toThrow(
+        'Validation failed',
+      );
+    });
+
+    it('should log error when validation fails', async () => {
+      const errorSpy = jest.spyOn(Logger.prototype, 'error');
+      const invalidAuthDetails = JSON.stringify({ accessToken: '' });
+      mockVaultService.getSecret.mockResolvedValue(invalidAuthDetails);
+
+      await expect(adapter.getAuthDetails(mockBankConnection, mockVaultAccessToken)).rejects.toThrow();
+
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('Plaid connection payload validation failed'));
     });
   });
 });

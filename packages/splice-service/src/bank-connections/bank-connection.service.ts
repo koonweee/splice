@@ -139,6 +139,7 @@ export class BankConnectionService {
     vaultAccessToken: string,
     startDate?: Date,
     endDate?: Date,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]> {
     const connection = await this.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
@@ -151,10 +152,10 @@ export class BankConnectionService {
 
     return await this.dataSourceManager.fetchTransactions(
       connection,
-      `${connectionId}-default`,
       startDate || new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
       endDate || new Date(),
       vaultAccessToken,
+      accountId,
     );
   }
 }

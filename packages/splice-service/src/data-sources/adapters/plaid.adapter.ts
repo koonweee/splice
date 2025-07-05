@@ -11,6 +11,7 @@ import {
   PlaidApi,
   PlaidEnvironments,
   Products,
+  Transaction,
 } from 'plaid';
 import {
   BankConnection,
@@ -102,23 +103,11 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
       throw new BadRequestException('Auth details UUID is not set for connection');
     }
 
-    const vaultSecret = await this.vaultService.getSecret(connection.authDetailsUuid, vaultAccessToken);
-
-    // Parse as JSON
-    const authDetails = JSON.parse(vaultSecret);
-
-    // Ensure it has accessToken (using zod)
-    let parsedAuthDetails: { accessToken: string };
-    try {
-      parsedAuthDetails = PlaidFinalizeConnectionSchema.parse(authDetails);
-    } catch (error) {
-      this.logger.error(`Plaid connection payload validation failed: ${error}`);
-      throw new BadRequestException(`Validation failed: ${error}`);
-    }
+    const authDetails = await this.getAuthDetails(connection, vaultAccessToken);
 
     // Fetch accounts from plaid
     const { data: plaidAccountsData } = await this.plaidApiClient.accountsGet({
-      access_token: parsedAuthDetails.accessToken,
+      access_token: authDetails.accessToken,
     });
 
     return plaidAccountsData.accounts.map((account) =>
@@ -166,15 +155,82 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
 
   async fetchTransactions(
     connection: BankConnection,
-    accountId: string,
     startDate: Date,
     endDate: Date,
-    _vaultAccessToken: string,
+    vaultAccessToken: string,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(
       `Fetching transactions for plaid connection ${connection.id}, account ${accountId} from ${startDate.toISOString()} to ${endDate.toISOString()}`,
     );
 
-    return [];
+    if (!connection.authDetailsUuid) {
+      throw new BadRequestException('Auth details UUID is not set for connection');
+    }
+
+    // Plaid requires account id, throw if not provided
+    if (!accountId) {
+      throw new BadRequestException('Account ID is required for plaid transactions');
+    }
+
+    const authDetails = await this.getAuthDetails(connection, vaultAccessToken);
+
+    const transactions = await this.plaidApiClient.transactionsGet({
+      access_token: authDetails.accessToken,
+      start_date: startDate.toISOString().split('T')[0],
+      end_date: endDate.toISOString().split('T')[0],
+      options: {
+        account_ids: [accountId],
+      },
+    });
+
+    this.logger.log(
+      `Fetched ${transactions.data.transactions.length} transactions for plaid connection ${connection.id}`,
+      transactions.data.transactions,
+    );
+
+    return transactions.data.transactions.map((transaction) =>
+      this.plaidTransactionToStandardizedTransaction(transaction),
+    );
+  }
+
+  plaidTransactionToStandardizedTransaction(transaction: Transaction): StandardizedTransaction {
+    return {
+      id: transaction.transaction_id,
+      accountId: transaction.account_id,
+      date: transaction.date,
+      datetime: transaction.datetime ?? undefined,
+      description: transaction.name,
+      merchantName: transaction.merchant_name ?? undefined,
+      pending: transaction.pending,
+      logoUrl: transaction.logo_url ?? undefined,
+      websiteUrl: transaction.website ?? undefined,
+      amount: transaction.amount,
+      isoCurrencyCode: transaction.iso_currency_code ?? undefined,
+      unofficialCurrencyCode: transaction.unofficial_currency_code ?? undefined,
+      type: transaction.amount > 0 ? 'DEBIT' : 'CREDIT',
+    };
+  }
+
+  async getAuthDetails(connection: BankConnection, vaultAccessToken: string): Promise<{ accessToken: string }> {
+    if (!connection.authDetailsUuid) {
+      throw new BadRequestException('Auth details UUID is not set for connection');
+    }
+
+    const vaultSecret = await this.vaultService.getSecret(connection.authDetailsUuid, vaultAccessToken);
+
+    // Parse as JSON
+    const authDetails = JSON.parse(vaultSecret);
+
+    // Ensure it has accessToken (using zod)
+    let parsedAuthDetails: { accessToken: string };
+    try {
+      parsedAuthDetails = PlaidFinalizeConnectionSchema.parse(authDetails);
+    } catch (error) {
+      this.logger.error(`Plaid connection payload validation failed: ${error}`);
+      throw new BadRequestException(`Validation failed: ${error}`);
+    }
+
+    return parsedAuthDetails;
   }
 }

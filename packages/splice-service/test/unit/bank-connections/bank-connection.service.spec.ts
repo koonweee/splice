@@ -241,6 +241,7 @@ describe('BankConnectionService', () => {
         description: 'Test transaction',
         amount: 100,
         type: 'CREDIT' as const,
+        pending: false,
       },
     ];
 
@@ -265,10 +266,10 @@ describe('BankConnectionService', () => {
       });
       expect(dataSourceManager.fetchTransactions).toHaveBeenCalledWith(
         mockBankConnection,
-        `${mockConnectionId}-default`,
         startDate,
         endDate,
         mockVaultAccessToken,
+        undefined, // accountId not provided
       );
       expect(result).toEqual(mockTransactions);
     });
@@ -281,10 +282,10 @@ describe('BankConnectionService', () => {
 
       expect(dataSourceManager.fetchTransactions).toHaveBeenCalledWith(
         mockBankConnection,
-        `${mockConnectionId}-default`,
         expect.any(Date), // 90 days ago
         expect.any(Date), // now
         mockVaultAccessToken,
+        undefined, // accountId not provided
       );
     });
 

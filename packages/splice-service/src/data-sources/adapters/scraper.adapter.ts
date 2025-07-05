@@ -82,16 +82,16 @@ export class ScraperAdapter implements DataSourceAdapter {
 
   async fetchTransactions(
     connection: BankConnection,
-    accountId: string,
     startDate: Date,
     endDate: Date,
     vaultAccessToken: string,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(
       `Fetching transactions for scraper connection ${connection.id}, account ${accountId} from ${startDate.toISOString()} to ${endDate.toISOString()}`,
     );
 
-    return this.fetchTransactionsWithToken(connection, accountId, startDate, endDate, vaultAccessToken);
+    return this.fetchTransactionsWithToken(connection, startDate, endDate, vaultAccessToken, accountId);
   }
 
   /**
@@ -100,10 +100,10 @@ export class ScraperAdapter implements DataSourceAdapter {
    */
   async fetchTransactionsWithToken(
     connection: BankConnection,
-    accountId: string,
-    _startDate: Date,
-    _endDate: Date,
+    startDate: Date,
+    endDate: Date,
     vaultAccessToken: string,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(
       `Fetching transactions with vault token for scraper connection ${connection.id}, account ${accountId}`,
@@ -118,7 +118,7 @@ export class ScraperAdapter implements DataSourceAdapter {
       );
 
       // Transform the scraped data to standardized format
-      return this.transformScrapedDataToStandardizedTransactions(scrapedData, accountId, connection);
+      return this.transformScrapedDataToStandardizedTransactions(scrapedData, connection, accountId);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       this.logger.error(`Failed to fetch transactions for connection ${connection.id}: ${errorMessage}`);
@@ -128,8 +128,8 @@ export class ScraperAdapter implements DataSourceAdapter {
 
   private transformScrapedDataToStandardizedTransactions(
     scrapedData: Record<string, unknown>,
-    _accountId: string,
     connection: BankConnection,
+    accountId?: string,
   ): StandardizedTransaction[] {
     const transactions: StandardizedTransaction[] = [];
 
@@ -163,6 +163,7 @@ export class ScraperAdapter implements DataSourceAdapter {
             accountBalance: typedAccountData.totalBalance,
             accountType: typedAccountData.type,
           },
+          pending: false,
         };
 
         transactions.push(standardizedTransaction);
