@@ -101,7 +101,7 @@ export class BankConnectionService {
     if (connection.status !== BankConnectionStatus.PENDING_AUTH) {
       throw new BadRequestException('Bank connection is not in PENDING_AUTH state');
     }
-    return this.dataSourceManager.initiateConnection(connection.bank.sourceType);
+    return this.dataSourceManager.initiateConnection(connection.bank.sourceType, userId);
   }
 
   async finalizeLogin(

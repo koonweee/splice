@@ -38,10 +38,6 @@ export class BankRegistryService implements OnModuleInit {
     this.logger.log('Seeding bank registry...');
 
     const existingBanks = await this.bankRegistryRepository.count();
-    if (existingBanks > 0) {
-      this.logger.log('Bank registry already seeded, skipping');
-      return;
-    }
 
     const banksToSeed = [
       {
@@ -50,11 +46,21 @@ export class BankRegistryService implements OnModuleInit {
         scraperIdentifier: 'dbs',
         isActive: true,
       },
+      {
+        name: 'Plaid',
+        sourceType: DataSourceType.PLAID,
+        isActive: true,
+      },
     ];
+
+    if (existingBanks === banksToSeed.length) {
+      this.logger.log('Bank registry already seeded, skipping');
+      return;
+    }
 
     for (const bankData of banksToSeed) {
       const existingBank = await this.bankRegistryRepository.findOne({
-        where: { scraperIdentifier: bankData.scraperIdentifier },
+        where: { name: bankData.name, sourceType: bankData.sourceType },
       });
 
       if (!existingBank) {
