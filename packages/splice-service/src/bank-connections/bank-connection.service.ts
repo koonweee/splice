@@ -14,13 +14,13 @@ import { BankConnectionEntity } from './bank-connection.entity';
 
 @Injectable()
 export class BankConnectionService {
+  private readonly logger = new Logger(BankConnectionService.name);
   constructor(
     @InjectRepository(BankConnectionEntity)
     private bankConnectionRepository: Repository<BankConnectionEntity>,
     private bankRegistryService: BankRegistryService,
     private dataSourceManager: DataSourceManager,
     private vaultService: VaultService,
-    private logger: Logger,
   ) {}
 
   async findByUserId(userId: string): Promise<BankConnection[]> {

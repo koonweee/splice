@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { BankConnectionsModule } from '../bank-connections/bank-connections.module';
 import { BankRegistryModule } from '../bank-registry/bank-registry.module';
 import { VaultModule } from '../vault/vault.module';
@@ -8,7 +8,7 @@ import { DBSStrategy } from './strategies/dbs.strategy';
 const STRATEGIES = [DBSStrategy] as const;
 
 @Module({
-  imports: [VaultModule, BankRegistryModule, BankConnectionsModule],
+  imports: [VaultModule, BankRegistryModule, forwardRef(() => BankConnectionsModule)],
   providers: [
     ScraperService,
     ...STRATEGIES,
