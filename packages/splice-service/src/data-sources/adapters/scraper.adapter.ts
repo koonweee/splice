@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
 import { z } from 'zod';
 import { ScraperService } from '../../scraper/scraper.service';
