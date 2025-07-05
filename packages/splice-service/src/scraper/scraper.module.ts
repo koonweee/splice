@@ -1,4 +1,4 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { BankConnectionsModule } from '../bank-connections/bank-connections.module';
 import { BankRegistryModule } from '../bank-registry/bank-registry.module';
 import { VaultModule } from '../vault/vault.module';
