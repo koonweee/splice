@@ -5,15 +5,15 @@
     "packages/**"
   ],
   "scripts": {
-    "dev": "bun run --filter splice-service dev",
+    "dev": "bun run --filter packages/splice-service dev",
     "build": "bun run --filter '*' build",
     "test": "bun run --filter '*' test",
     "test:watch": "bun run --filter '*' test:watch",
     "test:cov": "bun run --filter '*' test:cov",
     "lint": "bun run --filter '*' lint --diagnostic-level=error",
     "format": "bun run --filter '*' format",
-    "db": "bun run --filter splice-service db",
-    "test:e2e": "bun run --filter splice-service test:e2e",
+    "db": "bun run --filter packages/splice-service db",
+    "test:e2e": "bun run --filter packages/splice-service test:e2e",
     "clean": "rm -rf dist node_modules && rm -rf packages/*/dist packages/*/node_modules",
     "claude:usage": "bunx ccusage",
     "prepare": "husky"

@@ -6,9 +6,16 @@ import { DataSourcesModule } from '../data-sources/data-sources.module';
 import { BankConnectionController } from './bank-connection.controller';
 import { BankConnectionEntity } from './bank-connection.entity';
 import { BankConnectionService } from './bank-connection.service';
+import { VaultModule } from '../vault/vault.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([BankConnectionEntity]), BankRegistryModule, DataSourcesModule, ApiKeyStoreModule],
+  imports: [
+    TypeOrmModule.forFeature([BankConnectionEntity]),
+    BankRegistryModule,
+    DataSourcesModule,
+    ApiKeyStoreModule,
+    VaultModule,
+  ],
   controllers: [BankConnectionController],
   providers: [BankConnectionService],
   exports: [BankConnectionService],
