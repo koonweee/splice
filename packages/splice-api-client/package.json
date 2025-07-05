@@ -1,9 +1,9 @@
 {
-  "name": "@splice/api-client",
-  "version": "1.0.0",
+  "name": "splice-api-client",
+  "version": "1.0.4",
   "description": "Type-safe HTTP client for Splice API",
-  "main": "dist/src/index.js",
-  "types": "dist/src/index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "prepare": "tsc --build",
@@ -21,10 +21,24 @@
     "jest": "^29.7.0"
   },
   "dependencies": {
-    "@splice/api": "workspace:*"
+    "splice-api": "^1.0.0"
   },
   "peerDependencies": {},
   "files": [
     "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/koonweee/splice.git",
+    "directory": "packages/splice-api-client"
+  },
+  "keywords": [
+    "splice",
+    "api-client",
+    "http-client",
+    "typescript"
   ]
 }

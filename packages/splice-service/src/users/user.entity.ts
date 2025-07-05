@@ -7,7 +7,7 @@ export class UserEntity extends BaseEntity implements User {
   @Column()
   declare username: string;
 
-  @Column()
+  @Column({ nullable: true })
   declare email?: string;
 
   @Column({ type: 'int', default: 1 })

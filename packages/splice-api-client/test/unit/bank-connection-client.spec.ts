@@ -1,4 +1,4 @@
-import { BankConnectionStatus } from '@splice/api';
+import { BankConnectionStatus } from 'splice-api';
 import { BankConnectionClient } from '../../src/client/bank-connection-client';
 import { createMockResponse, mockFetch } from '../mocks/fetch';
 

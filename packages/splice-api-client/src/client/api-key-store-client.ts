@@ -1,4 +1,4 @@
-import type { ApiKeyType } from '@splice/api';
+import type { ApiKeyType } from 'splice-api';
 import { createHeaders, HttpError } from '../utils/http-helpers';
 import { BaseClient } from './base-client';
 
