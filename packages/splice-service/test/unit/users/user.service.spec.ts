@@ -1,7 +1,7 @@
 import { JwtService } from '@nestjs/jwt';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { User } from '@splice/api';
+import { User } from 'splice-api';
 import type { Repository } from 'typeorm';
 import { AuthService } from '../../../src/auth/auth.service';
 import { UserEntity } from '../../../src/users/user.entity';

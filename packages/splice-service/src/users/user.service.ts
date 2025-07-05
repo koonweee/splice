@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { User } from '@splice/api';
+import type { User } from 'splice-api';
 import type { Repository } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
 import { UserEntity } from './user.entity';

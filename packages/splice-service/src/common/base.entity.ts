@@ -1,4 +1,4 @@
-import { BaseInterface } from '@splice/api';
+import { BaseInterface } from 'splice-api';
 import { CreateDateColumn, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 export abstract class BaseEntity implements BaseInterface {

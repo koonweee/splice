@@ -1,8 +1,8 @@
 import { Body, Controller, Headers, Post, Res, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { User } from '@splice/api';
 import type { Response } from 'express';
+import { User } from 'splice-api';
 import { AuthenticatedUser } from '../common/decorators';
 import { ApiKeyStoreService } from './api-key-store.service';
 import { ApiKeyHeadersDto, CreateApiKeyDto } from './dto';

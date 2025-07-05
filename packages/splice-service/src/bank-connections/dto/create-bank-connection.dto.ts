@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { CreateBankConnectionRequest } from '@splice/api';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { CreateBankConnectionRequest } from 'splice-api';
 
 export class CreateBankConnectionDto implements CreateBankConnectionRequest {
   @ApiProperty({ example: 'dbs', description: 'The ID of the bank to connect to' })

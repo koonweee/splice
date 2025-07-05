@@ -1,4 +1,4 @@
-import type { AvailableBankResponse } from '@splice/api';
+import type { AvailableBankResponse } from 'splice-api';
 import { BaseClient } from './base-client';
 
 export class BankRegistryClient extends BaseClient {

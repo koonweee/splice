@@ -1,11 +1,6 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import {
-  BankConnection,
-  BankConnectionStatus,
-  CreateBankConnectionRequest,
-  StandardizedTransaction,
-} from '@splice/api';
+import { BankConnection, BankConnectionStatus, CreateBankConnectionRequest, StandardizedTransaction } from 'splice-api';
 import { Repository } from 'typeorm';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { DataSourceManager } from '../data-sources/manager/data-source-manager.service';
@@ -101,7 +96,7 @@ export class BankConnectionService {
     if (connection.status !== BankConnectionStatus.PENDING_AUTH) {
       throw new BadRequestException('Bank connection is not in PENDING_AUTH state');
     }
-    return this.dataSourceManager.initiateConnection(connection.bank.sourceType);
+    return this.dataSourceManager.initiateConnection(connection.bank.sourceType, userId);
   }
 
   async finalizeLogin(

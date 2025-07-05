@@ -1,4 +1,4 @@
-import { ApiKeyStore, ApiKeyType } from '@splice/api';
+import { ApiKeyStore, ApiKeyType } from 'splice-api';
 import { Column, Entity, Index } from 'typeorm';
 import { BaseEntity } from '../common/base.entity';
 

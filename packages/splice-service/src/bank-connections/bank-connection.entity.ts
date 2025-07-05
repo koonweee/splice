@@ -1,4 +1,4 @@
-import { Bank, BankConnection, BankConnectionStatus } from '@splice/api';
+import { Bank, BankConnection, BankConnectionStatus } from 'splice-api';
 import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
 import { BankEntity } from '../bank-registry/bank.entity';
 import { BaseEntity } from '../common/base.entity';

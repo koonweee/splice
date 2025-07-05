@@ -1,7 +1,7 @@
 import { unlink } from 'node:fs/promises';
 import { Injectable, type Logger } from '@nestjs/common';
-import type { ScrapedData } from '@splice/api';
 import type { Page } from 'playwright';
+import type { ScrapedData } from 'splice-api';
 import { CSVLoader } from './loaders/csv.loader';
 import { parseDBSCSV } from './parsers/dbs-checking-savings-csv.parser';
 import { ScraperStrategy } from './types';

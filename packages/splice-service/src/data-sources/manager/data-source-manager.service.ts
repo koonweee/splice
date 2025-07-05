@@ -5,7 +5,7 @@ import {
   DataSourceType,
   StandardizedAccount,
   StandardizedTransaction,
-} from '@splice/api';
+} from 'splice-api';
 import { DATA_SOURCE_ADAPTERS } from '../adapters/adapter.constants';
 
 @Injectable()
@@ -17,10 +17,10 @@ export class DataSourceManager {
     private readonly adapters: Map<DataSourceType, DataSourceAdapter>,
   ) {}
 
-  async initiateConnection(sourceType: DataSourceType): Promise<object | undefined> {
+  async initiateConnection(sourceType: DataSourceType, userUuid: string): Promise<object | undefined> {
     const adapter = this.getAdapter(sourceType);
     this.logger.log(`Initiating connection for source type ${sourceType}`);
-    return adapter.initiateConnection();
+    return adapter.initiateConnection(userUuid);
   }
 
   async validateFinalizeConnectionPayload(sourceType: DataSourceType, payload?: object): Promise<void> {
