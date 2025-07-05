@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   BankConnection,
@@ -97,6 +97,10 @@ export class BankConnectionService {
 
   async initiateLogin(userId: string, connectionId: string): Promise<object | undefined> {
     const connection = await this.findByUserIdAndConnectionIdOrThrow(userId, connectionId);
+    // Throw if connection status is not pending auth
+    if (connection.status !== BankConnectionStatus.PENDING_AUTH) {
+      throw new BadRequestException('Bank connection is not in PENDING_AUTH state');
+    }
     return this.dataSourceManager.initiateConnection(connection.bank.sourceType);
   }
 
@@ -109,6 +113,10 @@ export class BankConnectionService {
   ): Promise<void> {
     this.logger.log(`Finalizing login for connection ${connectionId}`);
     const connection = await this.findByUserIdAndConnectionIdOrThrow(userId, connectionId);
+    // Throw if connection status is not pending auth
+    if (connection.status !== BankConnectionStatus.PENDING_AUTH) {
+      throw new BadRequestException('Bank connection is not in PENDING_AUTH state');
+    }
 
     // Validate the payload
     this.dataSourceManager.validateFinalizeConnectionPayload(connection.bank.sourceType, payload);
@@ -119,6 +127,7 @@ export class BankConnectionService {
       payload,
       vaultAccessToken,
       vaultOrganisationId,
+      `Auth details for connection ${connection.id} - ${connection.bank.name}`,
     );
 
     // Update the connection with the auth details uuid

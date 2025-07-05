@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from '@splice/api';
 import { z } from 'zod';
 import { ScraperService } from '../../scraper/scraper.service';
@@ -45,10 +45,11 @@ export class ScraperAdapter implements DataSourceAdapter {
       if (error instanceof z.ZodError) {
         const errorMessages = error.errors.map((err) => `${err.path.join('.')}: ${err.message}`).join(', ');
         this.logger.error(`Scraper connection payload validation failed: ${errorMessages}`);
-        throw new Error(`Validation failed: ${errorMessages}`);
+        throw new BadRequestException(`Validation failed: ${errorMessages}`);
       }
+      this.logger.error(`Scraper connection payload validation failed: ${error}`);
       // Re-throw unexpected errors
-      throw error;
+      throw new BadRequestException(`Validation failed: ${error}`);
     }
   }
 

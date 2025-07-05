@@ -40,11 +40,20 @@ export class VaultService {
    * @param organizationId The organization ID where the secret will be created
    * @returns The created secret uuid
    */
-  async createSecret(key: string, value: object, accessToken: string, organizationId: string): Promise<string> {
+  async createSecret(
+    key: string,
+    value: object,
+    accessToken: string,
+    organizationId: string,
+    note?: string,
+  ): Promise<string> {
     try {
       const client = await this.getBitwardenClient(accessToken);
+      // Get project (TODO: we assume there is only one project)
+      const projectsResponse = await client.projects().list(organizationId);
+      const project = projectsResponse.data[0];
       const stringifiedValue = JSON.stringify(value, null, 2);
-      const secret = await client.secrets().create(organizationId, key, stringifiedValue, '', []);
+      const secret = await client.secrets().create(organizationId, key, stringifiedValue, note || '', [project.id]);
       this.logger.log(`Created secret with key: ${key}`);
       return secret.id;
     } catch (error) {
