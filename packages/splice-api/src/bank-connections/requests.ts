@@ -5,4 +5,5 @@ export interface BankConnectionByIdParams {
 export interface GetTransactionsQuery {
   startDate?: string;
   endDate?: string;
+  accountId?: string;
 }
