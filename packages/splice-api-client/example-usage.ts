@@ -1,5 +1,5 @@
-import type { CreateUserRequest, GetTransactionsQuery } from '@splice/api';
-import { ApiKeyType } from '@splice/api';
+import type { CreateUserRequest, GetTransactionsQuery } from 'splice-api';
+import { ApiKeyType } from 'splice-api';
 import { ApiKeyStoreClient, BankConnectionClient, SpliceApiClient, UserClient } from './src/index';
 
 // Example 1: Using individual clients

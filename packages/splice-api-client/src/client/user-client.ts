@@ -1,4 +1,4 @@
-import type { CreateUserRequest, User } from '@splice/api';
+import type { CreateUserRequest, User } from 'splice-api';
 import { BaseClient } from './base-client';
 
 export class UserClient extends BaseClient {

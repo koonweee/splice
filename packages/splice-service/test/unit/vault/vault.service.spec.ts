@@ -6,6 +6,7 @@ import { VaultService } from '../../../src/vault/vault.service';
 const mockBitwardenClient = {
   auth: jest.fn(),
   secrets: jest.fn(),
+  projects: jest.fn(),
 };
 
 const mockAuth = {
@@ -15,6 +16,10 @@ const mockAuth = {
 const mockSecrets = {
   get: jest.fn(),
   create: jest.fn(),
+  list: jest.fn(),
+};
+
+const mockProjects = {
   list: jest.fn(),
 };
 
@@ -50,11 +55,15 @@ describe('VaultService', () => {
     // Setup default mock behaviors
     mockBitwardenClient.auth.mockReturnValue(mockAuth);
     mockBitwardenClient.secrets.mockReturnValue(mockSecrets);
+    mockBitwardenClient.projects.mockReturnValue(mockProjects);
     mockAuth.loginAccessToken.mockResolvedValue(undefined);
     mockSecrets.get.mockResolvedValue({ value: mockSecretValue });
     mockSecrets.create.mockResolvedValue({ id: mockSecretId });
     mockSecrets.list.mockResolvedValue({
       data: [{ id: mockSecretId, key: mockSecretKey, organizationId: mockOrganizationId }],
+    });
+    mockProjects.list.mockResolvedValue({
+      data: [{ id: 'test-project-id' }],
     });
   });
 
@@ -193,7 +202,7 @@ describe('VaultService', () => {
         mockSecretKey,
         JSON.stringify(mockSecretObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
       expect(result).toBe(mockSecretId);
     });
@@ -217,7 +226,7 @@ describe('VaultService', () => {
         'complex-secret',
         JSON.stringify(complexObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
 
@@ -234,7 +243,7 @@ describe('VaultService', () => {
 
     it('should handle secret creation errors', async () => {
       const createError = new Error('Organization not found');
-      mockSecrets.create.mockRejectedValue(createError);
+      mockProjects.list.mockRejectedValue(createError);
 
       await expect(
         service.createSecret(mockSecretKey, mockSecretObject, mockAccessToken, mockOrganizationId),
@@ -254,7 +263,7 @@ describe('VaultService', () => {
         'empty-secret',
         JSON.stringify(emptyObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
 
@@ -280,7 +289,7 @@ describe('VaultService', () => {
         'nested-secret',
         JSON.stringify(nestedObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
 
@@ -297,7 +306,7 @@ describe('VaultService', () => {
         'array-secret',
         JSON.stringify(objectWithArray, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
 
@@ -319,7 +328,7 @@ describe('VaultService', () => {
         specialKey,
         JSON.stringify(mockSecretObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
 
@@ -333,7 +342,7 @@ describe('VaultService', () => {
         mockSecretKey,
         JSON.stringify(mockSecretObject, null, 2),
         '',
-        [],
+        ['test-project-id'],
       );
     });
   });

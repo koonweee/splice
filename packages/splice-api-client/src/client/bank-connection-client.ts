@@ -5,7 +5,7 @@ import type {
   GetTransactionsQuery,
   StandardizedAccount,
   StandardizedTransaction,
-} from '@splice/api';
+} from 'splice-api';
 import { BaseClient } from './base-client';
 
 export class BankConnectionClient extends BaseClient {

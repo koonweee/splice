@@ -16,7 +16,10 @@
     "test:e2e": "bun run --filter packages/splice-service test:e2e",
     "clean": "rm -rf dist node_modules && rm -rf packages/*/dist packages/*/node_modules",
     "claude:usage": "bunx ccusage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "publish:api": "cd packages/splice-api && npm publish",
+    "publish:api-client": "cd packages/splice-api-client && npm publish",
+    "publish:all": "bun run build && bun run publish:api && bun run publish:api-client"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.0.0",

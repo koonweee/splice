@@ -1,23 +1,15 @@
-import {
-  HttpException,
-  HttpStatus,
-  Inject,
-  Injectable,
-  Logger,
-  type OnModuleDestroy,
-  type OnModuleInit,
-} from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BankConnectionStatus, type ScrapedData } from '@splice/api';
-import { type Browser, chromium } from 'playwright';
+import { chromium } from 'playwright';
 import { BankConnectionService } from '../bank-connections/bank-connection.service';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { VaultService } from '../vault/vault.service';
 import { ScraperStrategy } from './strategies/types';
 
 @Injectable()
-export class ScraperService implements OnModuleInit, OnModuleDestroy {
-  private browser: Browser | null = null;
+export class ScraperService {
+  private readonly SCRAPER_TIMEOUT_MS = 20000;
   private readonly logger = new Logger(ScraperService.name);
   private readonly scraperStrategies = new Map<string, ScraperStrategy>();
 
@@ -35,28 +27,7 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  async onModuleInit() {
-    // Launch the browser when the module initializes
-    this.logger.log('Launching browser');
-    this.browser = await chromium.launch({
-      headless: true, // Explicitly set headless mode
-    });
-    this.logger.log('Browser launched');
-  }
-
-  async onModuleDestroy() {
-    // Close the browser when the module is destroyed
-    if (this.browser) {
-      await this.browser.close();
-    }
-  }
-
   async scrapeByBankConnection(userId: string, connectionId: string, accessToken: string): Promise<ScrapedData> {
-    if (!this.browser) {
-      this.logger.error('Browser not initialized');
-      throw new HttpException('Browser not initialized', HttpStatus.INTERNAL_SERVER_ERROR);
-    }
-
     // Get the bank connection
     const connection = await this.bankConnectionService.findByUserIdAndConnectionId(userId, connectionId);
     if (!connection) {
@@ -79,6 +50,12 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       throw new HttpException(`No scraper strategy found for bank: ${bank.name}`, HttpStatus.NOT_FOUND);
     }
 
+    // Launch browser for this request
+    this.logger.log('Launching browser for scraping request');
+    const browser = await chromium.launch({
+      headless: true,
+    });
+
     try {
       // Update connection status to indicate scraping in progress
       await this.bankConnectionService.updateStatus(connectionId, BankConnectionStatus.ACTIVE);
@@ -90,19 +67,29 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Retrieving secret for connection ${connectionId}: ${connection.authDetailsUuid}`);
       const secret = await this.vaultService.getSecret(connection.authDetailsUuid, accessToken);
 
-      const page = await this.browser.newPage();
+      const page = await browser.newPage();
       try {
-        this.logger.log(`Navigating to ${strategy.startUrl} for bank connection ${connectionId}`);
-        await page.goto(strategy.startUrl);
-        // Wait for network to be idle
-        await page.waitForLoadState('networkidle');
-        this.logger.log(`Page settled ${strategy.startUrl}`);
+        // Wrap scraping logic with timeout
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          setTimeout(() => reject(new Error('Scraping timeout')), this.SCRAPER_TIMEOUT_MS);
+        });
 
-        const data = await strategy.scrape(secret, page, this.logger);
+        const scrapingPromise = async () => {
+          this.logger.log(`Navigating to ${strategy.startUrl} for bank connection ${connectionId}`);
+          await page.goto(strategy.startUrl);
+          // Wait for network to be idle
+          await page.waitForLoadState('networkidle');
+          this.logger.log(`Page settled ${strategy.startUrl}`);
 
-        // Update last sync time on successful scraping
-        await this.bankConnectionService.updateLastSync(connectionId);
+          const data = await strategy.scrape(secret, page, this.logger);
 
+          // Update last sync time on successful scraping
+          await this.bankConnectionService.updateLastSync(connectionId);
+
+          return data;
+        };
+
+        const data = await Promise.race([scrapingPromise(), timeoutPromise]);
         return data;
       } finally {
         await page.close();
@@ -116,6 +103,10 @@ export class ScraperService implements OnModuleInit, OnModuleDestroy {
       // Update connection status to error
       await this.bankConnectionService.updateStatus(connectionId, BankConnectionStatus.ERROR);
       throw new HttpException(`Failed to scrape bank connection: ${message}`, HttpStatus.INTERNAL_SERVER_ERROR);
+    } finally {
+      // Always close the browser
+      await browser.close();
+      this.logger.log('Browser closed');
     }
   }
 

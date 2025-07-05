@@ -1,4 +1,4 @@
-import { ApiKeyType } from '@splice/api';
+import { ApiKeyType } from 'splice-api';
 import { ApiKeyStoreClient } from '../../src/client/api-key-store-client';
 import { HttpError } from '../../src/utils/http-helpers';
 import { createMockResponse, mockFetch } from '../mocks/fetch';

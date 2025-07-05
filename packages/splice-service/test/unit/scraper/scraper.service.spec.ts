@@ -10,6 +10,13 @@ import type { ScraperStrategy } from '../../../src/scraper/strategies/types';
 import { VaultService } from '../../../src/vault/vault.service';
 import { MOCK_USER_ID } from '../../mocks/mocks';
 
+// Mock chromium.launch
+jest.mock('playwright', () => ({
+  chromium: {
+    launch: jest.fn(),
+  },
+}));
+
 describe('ScraperService', () => {
   let service: ScraperService;
   let bankConnectionService: jest.Mocked<BankConnectionService>;
@@ -18,6 +25,7 @@ describe('ScraperService', () => {
   const mockBankId = 'test-bank-id';
   const mockAccessToken = 'test-access-token';
   const mockSecret = 'username=test&password=test123';
+  const { chromium } = require('playwright');
 
   const mockStrategy: ScraperStrategy = {
     name: 'test-bank',
@@ -112,7 +120,7 @@ describe('ScraperService', () => {
     vaultService = module.get(VaultService);
 
     // Set up browser mock
-    (service as any).browser = mockBrowser;
+    chromium.launch.mockResolvedValue(mockBrowser);
     mockBrowser.newPage.mockResolvedValue(mockPage);
   });
 
@@ -140,6 +148,7 @@ describe('ScraperService', () => {
     it('should scrape bank connection successfully', async () => {
       const result = await service.scrapeByBankConnection(MOCK_USER_ID, mockConnectionId, mockAccessToken);
 
+      expect(chromium.launch).toHaveBeenCalledWith({ headless: true });
       expect(bankConnectionService.findByUserIdAndConnectionId).toHaveBeenCalledWith(MOCK_USER_ID, mockConnectionId);
       expect(bankConnectionService.updateStatus).toHaveBeenCalledWith(mockConnectionId, BankConnectionStatus.ACTIVE);
       expect(vaultService.getSecret).toHaveBeenCalledWith('auth-details-uuid', mockAccessToken);
@@ -148,15 +157,8 @@ describe('ScraperService', () => {
       expect(mockStrategy.scrape).toHaveBeenCalledWith(mockSecret, mockPage, expect.any(Object));
       expect(bankConnectionService.updateLastSync).toHaveBeenCalledWith(mockConnectionId);
       expect(mockPage.close).toHaveBeenCalled();
+      expect(mockBrowser.close).toHaveBeenCalled();
       expect(result).toEqual(mockScrapedData);
-    });
-
-    it('should throw HttpException when browser not initialized', async () => {
-      (service as any).browser = null;
-
-      await expect(service.scrapeByBankConnection(MOCK_USER_ID, mockConnectionId, mockAccessToken)).rejects.toThrow(
-        HttpException,
-      );
     });
 
     it('should throw HttpException when bank connection not found', async () => {
@@ -206,6 +208,7 @@ describe('ScraperService', () => {
 
       expect(bankConnectionService.updateStatus).toHaveBeenCalledWith(mockConnectionId, BankConnectionStatus.ERROR);
       expect(mockPage.close).toHaveBeenCalled();
+      expect(mockBrowser.close).toHaveBeenCalled();
     });
 
     it('should close page even when scraping throws error', async () => {
@@ -217,6 +220,7 @@ describe('ScraperService', () => {
       );
 
       expect(mockPage.close).toHaveBeenCalled();
+      expect(mockBrowser.close).toHaveBeenCalled();
     });
   });
 
