@@ -27,7 +27,6 @@
     "node": ">=20.0.0"
   },
   "dependencies": {
-    "@splice/api": "workspace:*",
     "@bitwarden/sdk-napi": "^1.0.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.2",
@@ -45,9 +44,11 @@
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.14.1",
+    "plaid": "^36.0.0",
     "playwright": "^1.51.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
+    "splice-api": "^1.0.1",
     "typeorm": "^0.3.21",
     "zod": "^3.25.67"
   },
