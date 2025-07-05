@@ -2,8 +2,9 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlaidApi } from 'plaid';
-import { BankConnection, BankConnectionStatus, DataSourceType } from 'splice-api';
+import { BankConnection, BankConnectionStatus, DataSourceType, StandardizedAccountType } from 'splice-api';
 import { PlaidAdapter } from '../../../../src/data-sources/adapters/plaid.adapter';
+import { VaultService } from '../../../../src/vault/vault.service';
 
 // Mock the plaid module
 jest.mock('plaid', () => ({
@@ -18,12 +19,22 @@ jest.mock('plaid', () => ({
   CountryCode: {
     Us: 'US',
   },
+  AccountType: {
+    Depository: 'depository',
+    Credit: 'credit',
+    Investment: 'investment',
+  },
+  AccountSubtype: {
+    Checking: 'checking',
+    Savings: 'savings',
+  },
 }));
 
 describe('PlaidAdapter', () => {
   let adapter: PlaidAdapter;
   let configService: jest.Mocked<ConfigService>;
   let mockPlaidApiClient: jest.Mocked<PlaidApi>;
+  let mockVaultService: jest.Mocked<VaultService>;
 
   const mockUserId = 'user-123';
   const mockConnectionId = 'connection-456';
@@ -60,6 +71,45 @@ describe('PlaidAdapter', () => {
     },
   };
 
+  const mockPlaidAccountsResponse = {
+    data: {
+      accounts: [
+        {
+          account_id: 'account-123',
+          name: 'Chase Checking',
+          official_name: 'Chase Total Checking',
+          mask: '1234',
+          type: 'depository',
+          subtype: 'checking',
+          balances: {
+            current: 1000.5,
+            available: 950.5,
+            limit: null,
+            iso_currency_code: 'USD',
+            unofficial_currency_code: null,
+            last_updated_datetime: '2024-01-01T10:00:00Z',
+          },
+        },
+        {
+          account_id: 'account-456',
+          name: 'Chase Credit Card',
+          official_name: 'Chase Freedom Unlimited',
+          mask: '5678',
+          type: 'credit',
+          subtype: null,
+          balances: {
+            current: -500.25,
+            available: 2000.0,
+            limit: 5000.0,
+            iso_currency_code: 'USD',
+            unofficial_currency_code: null,
+            last_updated_datetime: '2024-01-01T10:00:00Z',
+          },
+        },
+      ],
+    },
+  };
+
   beforeEach(async () => {
     // Reset all mocks
     jest.clearAllMocks();
@@ -67,6 +117,7 @@ describe('PlaidAdapter', () => {
     // Mock PlaidApi methods
     mockPlaidApiClient = {
       linkTokenCreate: jest.fn(),
+      accountsGet: jest.fn(),
     } as unknown as jest.Mocked<PlaidApi>;
 
     // Mock PlaidApi constructor
@@ -83,12 +134,21 @@ describe('PlaidAdapter', () => {
       secret: 'test-secret',
     });
 
+    // Mock VaultService
+    mockVaultService = {
+      getSecret: jest.fn(),
+    } as unknown as jest.Mocked<VaultService>;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlaidAdapter,
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: VaultService,
+          useValue: mockVaultService,
         },
       ],
     }).compile();
@@ -119,7 +179,7 @@ describe('PlaidAdapter', () => {
       };
 
       expect(() => {
-        new PlaidAdapter(mockConfigServiceMissing as any);
+        new PlaidAdapter(mockConfigServiceMissing as any, mockVaultService);
       }).toThrow('PLAID_CLIENT_ID and PLAID_SECRET environment variables must be set');
     });
 
@@ -129,7 +189,7 @@ describe('PlaidAdapter', () => {
       };
 
       expect(() => {
-        new PlaidAdapter(mockConfigServiceMissing as any);
+        new PlaidAdapter(mockConfigServiceMissing as any, mockVaultService);
       }).toThrow('PLAID_CLIENT_ID and PLAID_SECRET environment variables must be set');
     });
 
@@ -139,14 +199,14 @@ describe('PlaidAdapter', () => {
       };
 
       expect(() => {
-        new PlaidAdapter(mockConfigServiceMissing as any);
+        new PlaidAdapter(mockConfigServiceMissing as any, mockVaultService);
       }).toThrow('PLAID_CLIENT_ID and PLAID_SECRET environment variables must be set');
     });
 
     it('should log initialization success', () => {
       const logSpy = jest.spyOn(Logger.prototype, 'log');
 
-      new PlaidAdapter(configService);
+      new PlaidAdapter(configService, mockVaultService);
 
       expect(logSpy).toHaveBeenCalledWith('Plaid adapter initialized');
     });
@@ -273,7 +333,7 @@ describe('PlaidAdapter', () => {
         }),
       };
 
-      const testAdapter = new PlaidAdapter(testConfigService as any);
+      const testAdapter = new PlaidAdapter(testConfigService as any, mockVaultService);
 
       // Mock the internal validation to throw a non-zod error
       testAdapter.validateFinalizeConnectionPayload = jest.fn().mockImplementation(async () => {
@@ -287,10 +347,48 @@ describe('PlaidAdapter', () => {
   });
 
   describe('fetchAccounts', () => {
-    it('should return empty array for plaid connection', async () => {
+    beforeEach(() => {
+      mockVaultService.getSecret.mockResolvedValue(JSON.stringify({ accessToken: 'access-token-123' }));
+      mockPlaidApiClient.accountsGet.mockResolvedValue(mockPlaidAccountsResponse as any);
+    });
+
+    it('should fetch accounts successfully', async () => {
       const result = await adapter.fetchAccounts(mockBankConnection, mockVaultAccessToken);
 
-      expect(result).toEqual([]);
+      expect(mockVaultService.getSecret).toHaveBeenCalledWith('auth-uuid-123', mockVaultAccessToken);
+      expect(mockPlaidApiClient.accountsGet).toHaveBeenCalledWith({
+        access_token: 'access-token-123',
+      });
+
+      expect(result).toHaveLength(2);
+      expect(result[0]).toEqual({
+        id: 'account-123',
+        name: 'Chase Checking',
+        mask: '1234',
+        type: StandardizedAccountType.CHECKING,
+        balances: {
+          current: 1000.5,
+          available: 950.5,
+          isoCurrencyCode: 'USD',
+          unofficialCurrencyCode: undefined,
+          lastUpdated: '2024-01-01T10:00:00Z',
+        },
+        institution: 'Chase Bank',
+      });
+      expect(result[1]).toEqual({
+        id: 'account-456',
+        name: 'Chase Credit Card',
+        mask: '5678',
+        type: StandardizedAccountType.CREDIT_CARD,
+        balances: {
+          current: -500.25,
+          available: 2000.0,
+          isoCurrencyCode: 'USD',
+          unofficialCurrencyCode: undefined,
+          lastUpdated: '2024-01-01T10:00:00Z',
+        },
+        institution: 'Chase Bank',
+      });
     });
 
     it('should log account fetching', async () => {
@@ -299,6 +397,134 @@ describe('PlaidAdapter', () => {
       await adapter.fetchAccounts(mockBankConnection, mockVaultAccessToken);
 
       expect(logSpy).toHaveBeenCalledWith(`Fetching accounts for plaid connection ${mockConnectionId}`);
+    });
+
+    it('should throw error when authDetailsUuid is missing', async () => {
+      const connectionWithoutAuth = { ...mockBankConnection, authDetailsUuid: undefined };
+
+      await expect(adapter.fetchAccounts(connectionWithoutAuth, mockVaultAccessToken)).rejects.toThrow(
+        'Auth details UUID is not set for connection',
+      );
+    });
+
+    it('should throw error when vault secret is invalid JSON', async () => {
+      mockVaultService.getSecret.mockResolvedValue('invalid-json');
+
+      await expect(adapter.fetchAccounts(mockBankConnection, mockVaultAccessToken)).rejects.toThrow();
+    });
+
+    it('should throw error when auth details validation fails', async () => {
+      mockVaultService.getSecret.mockResolvedValue(JSON.stringify({ invalidField: 'value' }));
+
+      await expect(adapter.fetchAccounts(mockBankConnection, mockVaultAccessToken)).rejects.toThrow(
+        'Validation failed',
+      );
+    });
+  });
+
+  describe('plaidAccountTypeToStandardizedAccountType', () => {
+    it('should convert depository checking to CHECKING', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'checking' as any);
+      expect(result).toBe(StandardizedAccountType.CHECKING);
+    });
+
+    it('should convert depository savings to SAVINGS', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'savings' as any);
+      expect(result).toBe(StandardizedAccountType.SAVINGS);
+    });
+
+    it('should convert credit to CREDIT_CARD', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('credit' as any, null);
+      expect(result).toBe(StandardizedAccountType.CREDIT_CARD);
+    });
+
+    it('should convert investment to INVESTMENT', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('investment' as any, null);
+      expect(result).toBe(StandardizedAccountType.INVESTMENT);
+    });
+
+    it('should return OTHER for unknown account types', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('unknown' as any, null);
+      expect(result).toBe(StandardizedAccountType.OTHER);
+    });
+
+    it('should return OTHER for depository with unknown subtype', () => {
+      const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'unknown' as any);
+      expect(result).toBe(StandardizedAccountType.OTHER);
+    });
+  });
+
+  describe('plaidAccountToStandardizedAccount', () => {
+    it('should convert plaid account to standardized account', () => {
+      const plaidAccount = {
+        account_id: 'test-account-id',
+        name: 'Test Account',
+        official_name: 'Test Account Official',
+        mask: '1234',
+        type: 'depository' as any,
+        subtype: 'checking' as any,
+        balances: {
+          current: 1000.5,
+          available: 950.5,
+          limit: null,
+          iso_currency_code: 'USD',
+          unofficial_currency_code: null,
+          last_updated_datetime: '2024-01-01T10:00:00Z',
+        },
+      };
+
+      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, 'Test Bank');
+
+      expect(result).toEqual({
+        id: 'test-account-id',
+        name: 'Test Account',
+        mask: '1234',
+        type: StandardizedAccountType.CHECKING,
+        balances: {
+          current: 1000.5,
+          available: 950.5,
+          isoCurrencyCode: 'USD',
+          unofficialCurrencyCode: undefined,
+          lastUpdated: '2024-01-01T10:00:00Z',
+        },
+        institution: 'Test Bank',
+      });
+    });
+
+    it('should handle missing optional fields', () => {
+      const plaidAccount = {
+        account_id: 'test-account-id',
+        name: 'Test Account',
+        official_name: null,
+        mask: null,
+        type: 'credit' as any,
+        subtype: null,
+        balances: {
+          current: null,
+          available: null,
+          limit: null,
+          iso_currency_code: null,
+          unofficial_currency_code: null,
+          last_updated_datetime: null,
+        },
+      };
+
+      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, 'Test Bank');
+
+      expect(result).toEqual({
+        id: 'test-account-id',
+        name: 'Test Account',
+        mask: undefined,
+        type: StandardizedAccountType.CREDIT_CARD,
+        balances: {
+          current: undefined,
+          available: undefined,
+          isoCurrencyCode: undefined,
+          unofficialCurrencyCode: undefined,
+          lastUpdated: undefined,
+        },
+        institution: 'Test Bank',
+      });
     });
   });
 

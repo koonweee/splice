@@ -1,6 +1,9 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
+  AccountBase,
+  AccountSubtype,
+  AccountType,
   Configuration,
   CountryCode,
   LinkTokenCreateRequest,
@@ -9,8 +12,15 @@ import {
   PlaidEnvironments,
   Products,
 } from 'plaid';
-import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from 'splice-api';
+import {
+  BankConnection,
+  DataSourceAdapter,
+  StandardizedAccount,
+  StandardizedAccountType,
+  StandardizedTransaction,
+} from 'splice-api';
 import { z } from 'zod';
+import { VaultService } from '../../vault/vault.service';
 
 // Zod schema for plaid connection finalization payload
 const PlaidFinalizeConnectionSchema = z.object({
@@ -22,7 +32,10 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
   private readonly logger = new Logger(PlaidAdapter.name);
   private readonly plaidApiClient: PlaidApi;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly vaultService: VaultService,
+  ) {
     const { clientId, secret } = this.configService.get<{ clientId: string; secret: string }>('plaid') ?? {};
     if (!clientId || !secret) {
       throw new Error('PLAID_CLIENT_ID and PLAID_SECRET environment variables must be set');
@@ -81,10 +94,74 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
     }
   }
 
-  async fetchAccounts(connection: BankConnection, _vaultAccessToken: string): Promise<StandardizedAccount[]> {
+  async fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]> {
     this.logger.log(`Fetching accounts for plaid connection ${connection.id}`);
 
-    return [];
+    // Throw if authDetailsUuid is not set
+    if (!connection.authDetailsUuid) {
+      throw new BadRequestException('Auth details UUID is not set for connection');
+    }
+
+    const vaultSecret = await this.vaultService.getSecret(connection.authDetailsUuid, vaultAccessToken);
+
+    // Parse as JSON
+    const authDetails = JSON.parse(vaultSecret);
+
+    // Ensure it has accessToken (using zod)
+    let parsedAuthDetails: { accessToken: string };
+    try {
+      parsedAuthDetails = PlaidFinalizeConnectionSchema.parse(authDetails);
+    } catch (error) {
+      this.logger.error(`Plaid connection payload validation failed: ${error}`);
+      throw new BadRequestException(`Validation failed: ${error}`);
+    }
+
+    // Fetch accounts from plaid
+    const { data: plaidAccountsData } = await this.plaidApiClient.accountsGet({
+      access_token: parsedAuthDetails.accessToken,
+    });
+
+    return plaidAccountsData.accounts.map((account) =>
+      this.plaidAccountToStandardizedAccount(account, connection.bank.name),
+    );
+  }
+
+  plaidAccountToStandardizedAccount(account: AccountBase, bankName: string): StandardizedAccount {
+    return {
+      id: account.account_id,
+      name: account.name,
+      mask: account.mask ?? undefined,
+      type: this.plaidAccountTypeToStandardizedAccountType(account.type, account.subtype),
+      balances: {
+        current: account.balances.current ?? undefined,
+        available: account.balances.available ?? undefined,
+        isoCurrencyCode: account.balances.iso_currency_code ?? undefined,
+        unofficialCurrencyCode: account.balances.unofficial_currency_code ?? undefined,
+        lastUpdated: account.balances.last_updated_datetime ?? undefined,
+      },
+      institution: bankName,
+    };
+  }
+
+  plaidAccountTypeToStandardizedAccountType(
+    accountType: AccountType,
+    subType: AccountSubtype | null,
+  ): StandardizedAccountType {
+    switch (accountType) {
+      case AccountType.Depository:
+        switch (subType) {
+          case AccountSubtype.Checking:
+            return StandardizedAccountType.CHECKING;
+          case AccountSubtype.Savings:
+            return StandardizedAccountType.SAVINGS;
+        }
+        break;
+      case AccountType.Credit:
+        return StandardizedAccountType.CREDIT_CARD;
+      case AccountType.Investment:
+        return StandardizedAccountType.INVESTMENT;
+    }
+    return StandardizedAccountType.OTHER;
   }
 
   async fetchTransactions(
@@ -92,7 +169,7 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
     accountId: string,
     startDate: Date,
     endDate: Date,
-    vaultAccessToken: string,
+    _vaultAccessToken: string,
   ): Promise<StandardizedTransaction[]> {
     this.logger.log(
       `Fetching transactions for plaid connection ${connection.id}, account ${accountId} from ${startDate.toISOString()} to ${endDate.toISOString()}`,

@@ -1,5 +1,11 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from 'splice-api';
+import {
+  BankConnection,
+  DataSourceAdapter,
+  StandardizedAccount,
+  StandardizedAccountType,
+  StandardizedTransaction,
+} from 'splice-api';
 import { z } from 'zod';
 import { ScraperService } from '../../scraper/scraper.service';
 
@@ -64,7 +70,7 @@ export class ScraperAdapter implements DataSourceAdapter {
       {
         id: `${connection.id}-default`,
         name: connection.bank.name,
-        type: 'OTHER',
+        type: StandardizedAccountType.OTHER,
         institution: connection.bank.name,
         metadata: {
           connectionId: connection.id,
