@@ -37,14 +37,15 @@ export class DataSourceManager {
 
   async fetchTransactions(
     connection: BankConnection,
-    accountId: string,
+
     startDate: Date,
     endDate: Date,
     vaultAccessToken: string,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]> {
     const adapter = this.getAdapter(connection.bank.sourceType);
     this.logger.log(`Fetching transactions for connection ${connection.id}, account ${accountId}`);
-    return adapter.fetchTransactions(connection, accountId, startDate, endDate, vaultAccessToken);
+    return adapter.fetchTransactions(connection, startDate, endDate, vaultAccessToken, accountId);
   }
 
   private getAdapter(sourceType: DataSourceType): DataSourceAdapter {

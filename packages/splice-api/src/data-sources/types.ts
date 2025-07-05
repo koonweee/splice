@@ -1,22 +1,51 @@
 /** biome-ignore-all lint/complexity/noBannedTypes: <each adapter should extend the base types> */
 import type { BankConnection } from '../bank-connections';
 
+export enum StandardizedAccountType {
+  CHECKING = 'CHECKING',
+  SAVINGS = 'SAVINGS',
+  CREDIT_CARD = 'CREDIT_CARD',
+  INVESTMENT = 'INVESTMENT',
+  OTHER = 'OTHER',
+}
+
 export interface StandardizedAccount {
   id: string;
   name: string;
-  type: 'CHECKING' | 'SAVINGS' | 'CREDIT_CARD' | 'INVESTMENT' | 'LOAN' | 'OTHER';
-  balance?: number;
-  currency?: string;
+  /** Last 2-4 alphanumeric characters of account number */
+  mask?: string;
+  type: StandardizedAccountType;
+  balances?: StandardizedAccountBalances;
   institution: string;
   metadata?: Record<string, any>;
+}
+
+export interface StandardizedAccountBalances {
+  /** Total balance (reflects posted transactions) */
+  current?: number;
+  /** Available balance (ie. current balance less pending transactions) */
+  available?: number;
+  /** Currency code in ISO 4217 format */
+  isoCurrencyCode?: string;
+  /** Unofficial currency code (ie. for non-ISO currencies like crypto) */
+  unofficialCurrencyCode?: string;
+  /** Last updated timestamp */
+  lastUpdated?: string;
 }
 
 export interface StandardizedTransaction {
   id: string;
   accountId: string;
   date: string;
+  datetime?: string;
   description: string;
+  merchantName?: string;
+  pending: boolean;
+  logoUrl?: string;
+  websiteUrl?: string;
   amount: number;
+  isoCurrencyCode?: string;
+  unofficialCurrencyCode?: string;
   currency?: string;
   category?: string;
   type: 'DEBIT' | 'CREDIT';
@@ -42,9 +71,9 @@ export interface DataSourceAdapter<InitiateConnectionResponse = undefined> {
   fetchAccounts(connection: BankConnection, vaultAccessToken: string): Promise<StandardizedAccount[]>;
   fetchTransactions(
     connection: BankConnection,
-    accountId: string,
     startDate: Date,
     endDate: Date,
     vaultAccessToken: string,
+    accountId?: string,
   ): Promise<StandardizedTransaction[]>;
 }
