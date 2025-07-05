@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ApiKeyType, CreateApiKeyRequest } from 'splice-api';
 import { IsEnum, IsUUID } from 'class-validator';
+import { ApiKeyType, CreateApiKeyRequest } from 'splice-api';
 
 export class CreateApiKeyDto implements CreateApiKeyRequest {
   @ApiProperty({ enum: ApiKeyType, example: ApiKeyType.BITWARDEN, description: 'The type of API key to store' })

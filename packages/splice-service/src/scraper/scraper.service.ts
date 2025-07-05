@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BankConnectionStatus, type ScrapedData } from 'splice-api';
 import { chromium } from 'playwright';
+import { BankConnectionStatus, type ScrapedData } from 'splice-api';
 import { BankConnectionService } from '../bank-connections/bank-connection.service';
 import { BankRegistryService } from '../bank-registry/bank-registry.service';
 import { VaultService } from '../vault/vault.service';

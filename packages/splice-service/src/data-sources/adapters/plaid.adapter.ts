@@ -1,6 +1,5 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from 'splice-api';
 import {
   Configuration,
   CountryCode,
@@ -10,6 +9,7 @@ import {
   PlaidEnvironments,
   Products,
 } from 'plaid';
+import { BankConnection, DataSourceAdapter, StandardizedAccount, StandardizedTransaction } from 'splice-api';
 import { z } from 'zod';
 
 // Zod schema for plaid connection finalization payload
