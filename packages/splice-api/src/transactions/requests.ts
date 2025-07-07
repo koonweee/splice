@@ -1,3 +1,5 @@
+import { StandardizedTransaction } from '../ledger';
+
 export interface TransactionByIdParams {
   transactionId: string;
 }
@@ -11,59 +13,11 @@ export interface TransactionQueryParams {
   offset?: number;
 }
 
-export interface CreateTransactionRequest {
-  accountId: string;
-  providerTransactionId: string;
-  providerAccountId: string;
-  amount: number;
-  isoCurrencyCode?: string;
-  unofficialCurrencyCode?: string;
-  category?: {
-    primary: string;
-    detailed?: string;
-    confidenceLevel?: string;
-  };
-  date: string;
-  name: string;
-  pending: boolean;
-  logoUrl?: string;
-  websiteUrl?: string;
-}
+export interface CreateTransactionRequest extends Omit<StandardizedTransaction, 'id'> {}
 
-export interface UpdateTransactionRequest {
-  amount?: number;
-  isoCurrencyCode?: string;
-  unofficialCurrencyCode?: string;
-  category?: {
-    primary: string;
-    detailed?: string;
-    confidenceLevel?: string;
-  };
-  date?: string;
-  name?: string;
-  pending?: boolean;
-  logoUrl?: string;
-  websiteUrl?: string;
-}
+export interface UpdateTransactionRequest extends Partial<Omit<StandardizedTransaction, 'id' | 'accountId' | 'providerTransactionId' | 'providerAccountId'>> {}
 
-export interface TransactionResponse {
-  id: string;
-  accountId: string;
-  providerTransactionId: string;
-  providerAccountId: string;
-  amount: number;
-  isoCurrencyCode?: string;
-  unofficialCurrencyCode?: string;
-  category?: {
-    primary: string;
-    detailed?: string;
-    confidenceLevel?: string;
-  };
-  date: string;
-  name: string;
-  pending: boolean;
-  logoUrl?: string;
-  websiteUrl?: string;
+export interface TransactionResponse extends StandardizedTransaction {
   createdAt: Date;
   updatedAt: Date;
 }
