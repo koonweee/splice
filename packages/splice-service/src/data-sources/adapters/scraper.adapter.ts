@@ -1,9 +1,10 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import {
+  AccountType,
   BankConnection,
   DataSourceAdapter,
+  DepositoryAccountSubtype,
   StandardizedAccount,
-  StandardizedAccountType,
   StandardizedTransaction,
 } from 'splice-api';
 import { z } from 'zod';
@@ -69,13 +70,15 @@ export class ScraperAdapter implements DataSourceAdapter {
     return [
       {
         id: `${connection.id}-default`,
+        bankConnection: connection,
+        providerAccountId: `${connection.id}-default`,
         name: connection.bank.name,
-        type: StandardizedAccountType.OTHER,
-        institution: connection.bank.name,
-        metadata: {
-          connectionId: connection.id,
-          scraperIdentifier: connection.bank.scraperIdentifier,
+        mask: '1234',
+        type: {
+          type: AccountType.DEPOSITORY,
+          subtype: DepositoryAccountSubtype.SAVINGS,
         },
+        balances: {},
       },
     ];
   }
@@ -100,8 +103,8 @@ export class ScraperAdapter implements DataSourceAdapter {
    */
   async fetchTransactionsWithToken(
     connection: BankConnection,
-    startDate: Date,
-    endDate: Date,
+    _startDate: Date,
+    _endDate: Date,
     vaultAccessToken: string,
     accountId?: string,
   ): Promise<StandardizedTransaction[]> {
@@ -147,22 +150,13 @@ export class ScraperAdapter implements DataSourceAdapter {
       for (const transaction of typedAccountData.transactions) {
         const standardizedTransaction: StandardizedTransaction = {
           id: `${connection.id}-${accountName}-${transaction.date}-${transaction.reference}`,
-          accountId: `${connection.id}-${accountName}`,
+          accountId: accountId ?? `${connection.id}-${accountName}`,
+          providerTransactionId: transaction.reference,
+          providerAccountId: accountId ?? `${connection.id}-${accountName}`,
           date: transaction.date,
-          description: this.buildTransactionDescription(transaction),
-          amount: Math.abs(transaction.amount), // Store as positive amount
-          currency: 'SGD', // DBS is Singapore bank
-          type: transaction.amount >= 0 ? 'DEBIT' : 'CREDIT',
-          metadata: {
-            originalAmount: transaction.amount,
-            reference: transaction.reference,
-            transactionRef1: transaction.transactionRef1,
-            transactionRef2: transaction.transactionRef2,
-            transactionRef3: transaction.transactionRef3,
-            accountName,
-            accountBalance: typedAccountData.totalBalance,
-            accountType: typedAccountData.type,
-          },
+          name: this.buildTransactionDescription(transaction),
+          amount: transaction.amount,
+          isoCurrencyCode: 'SGD', // DBS is Singapore bank
           pending: false,
         };
 
