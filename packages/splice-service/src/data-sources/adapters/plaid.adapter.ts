@@ -3,19 +3,23 @@ import { ConfigService } from '@nestjs/config';
 import {
   AccountBase,
   AccountSubtype,
-  AccountType,
   Configuration,
   CountryCode,
   LinkTokenCreateRequest,
   LinkTokenCreateResponse,
+  AccountType as PlaidAccountType,
   PlaidApi,
   PlaidEnvironments,
   Products,
   Transaction,
 } from 'plaid';
 import {
+  AccountType,
   BankConnection,
+  CreditAccountSubtype,
   DataSourceAdapter,
+  DepositoryAccountSubtype,
+  InvestmentAccountSubtype,
   StandardizedAccount,
   StandardizedAccountType,
   StandardizedTransaction,
@@ -110,17 +114,15 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
       access_token: authDetails.accessToken,
     });
 
-    return plaidAccountsData.accounts.map((account) =>
-      this.plaidAccountToStandardizedAccount(account, connection.bank.name),
-    );
+    return plaidAccountsData.accounts.map((account) => this.plaidAccountToStandardizedAccount(account, connection));
   }
 
-  plaidAccountToStandardizedAccount(account: AccountBase, bankName: string): StandardizedAccount {
+  plaidAccountToStandardizedAccount(account: AccountBase, connection: BankConnection): StandardizedAccount {
     return {
+      // TODO: This is not the correct ID, we should generate a new ID
       id: account.account_id,
-      name: account.name,
-      mask: account.mask ?? undefined,
-      type: this.plaidAccountTypeToStandardizedAccountType(account.type, account.subtype),
+      bankConnection: connection,
+      providerAccountId: account.account_id,
       balances: {
         current: account.balances.current ?? undefined,
         available: account.balances.available ?? undefined,
@@ -128,29 +130,95 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
         unofficialCurrencyCode: account.balances.unofficial_currency_code ?? undefined,
         lastUpdated: account.balances.last_updated_datetime ?? undefined,
       },
-      institution: bankName,
+      mask: account.mask ?? undefined,
+      name: account.name,
+      type: this.plaidAccountTypeToStandardizedAccountType(account.type, account.subtype),
     };
   }
 
   plaidAccountTypeToStandardizedAccountType(
-    accountType: AccountType,
+    accountType: PlaidAccountType,
     subType: AccountSubtype | null,
   ): StandardizedAccountType {
     switch (accountType) {
-      case AccountType.Depository:
+      case PlaidAccountType.Depository:
         switch (subType) {
           case AccountSubtype.Checking:
-            return StandardizedAccountType.CHECKING;
+            return {
+              type: AccountType.DEPOSITORY,
+              subtype: DepositoryAccountSubtype.CHECKING,
+            };
           case AccountSubtype.Savings:
-            return StandardizedAccountType.SAVINGS;
+            return {
+              type: AccountType.DEPOSITORY,
+              subtype: DepositoryAccountSubtype.SAVINGS,
+            };
+          case AccountSubtype.Hsa:
+            return {
+              type: AccountType.DEPOSITORY,
+              subtype: DepositoryAccountSubtype.HSA,
+            };
+          default:
+            return {
+              type: AccountType.DEPOSITORY,
+            };
         }
-        break;
-      case AccountType.Credit:
-        return StandardizedAccountType.CREDIT_CARD;
-      case AccountType.Investment:
-        return StandardizedAccountType.INVESTMENT;
+      case PlaidAccountType.Credit:
+        return {
+          type: AccountType.CREDIT,
+          subtype: CreditAccountSubtype.CREDIT_CARD,
+        };
+      case PlaidAccountType.Investment:
+        switch (subType) {
+          case AccountSubtype._401k:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype._401K,
+            };
+          case AccountSubtype.Brokerage:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.BROKERAGE,
+            };
+          case AccountSubtype.CryptoExchange:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.CRYPTO_EXCHANGE,
+            };
+          case AccountSubtype.Hsa:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.HSA,
+            };
+          case AccountSubtype.Ira:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.IRA,
+            };
+          case AccountSubtype.Other:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.OTHER,
+            };
+          case AccountSubtype.Roth:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.ROTH_IRA,
+            };
+          case AccountSubtype.Roth401k:
+            return {
+              type: AccountType.INVESTMENT,
+              subtype: InvestmentAccountSubtype.ROTH_401K,
+            };
+          default:
+            return {
+              type: AccountType.INVESTMENT,
+            };
+        }
     }
-    return StandardizedAccountType.OTHER;
+    return {
+      type: AccountType.OTHER,
+    };
   }
 
   async fetchTransactions(
@@ -190,25 +258,33 @@ export class PlaidAdapter implements DataSourceAdapter<LinkTokenCreateResponse> 
     );
 
     return transactions.data.transactions.map((transaction) =>
-      this.plaidTransactionToStandardizedTransaction(transaction),
+      this.plaidTransactionToStandardizedTransaction(transaction, accountId),
     );
   }
 
-  plaidTransactionToStandardizedTransaction(transaction: Transaction): StandardizedTransaction {
+  plaidTransactionToStandardizedTransaction(transaction: Transaction, accountId: string): StandardizedTransaction {
     return {
+      // TODO: This is not the correct ID, we should generate a new ID
       id: transaction.transaction_id,
-      accountId: transaction.account_id,
-      date: transaction.date,
-      datetime: transaction.datetime ?? undefined,
-      description: transaction.name,
-      merchantName: transaction.merchant_name ?? undefined,
-      pending: transaction.pending,
-      logoUrl: transaction.logo_url ?? undefined,
-      websiteUrl: transaction.website ?? undefined,
+      // TODO: This is not the correct account ID, we should generate a new ID
+      accountId,
+      providerTransactionId: transaction.transaction_id,
+      providerAccountId: accountId,
       amount: transaction.amount,
       isoCurrencyCode: transaction.iso_currency_code ?? undefined,
       unofficialCurrencyCode: transaction.unofficial_currency_code ?? undefined,
-      type: transaction.amount > 0 ? 'DEBIT' : 'CREDIT',
+      category: transaction.personal_finance_category
+        ? {
+            primary: transaction.personal_finance_category.primary,
+            detailed: transaction.personal_finance_category.detailed,
+            confidenceLevel: transaction.personal_finance_category.confidence_level ?? undefined,
+          }
+        : undefined,
+      date: transaction.date,
+      name: transaction.name,
+      pending: transaction.pending,
+      logoUrl: transaction.logo_url ?? undefined,
+      websiteUrl: transaction.website ?? undefined,
     };
   }
 
