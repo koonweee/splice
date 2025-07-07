@@ -222,13 +222,15 @@ describe('ScraperAdapter', () => {
       expect(result).toEqual([
         {
           id: `${mockConnectionId}-default`,
+          bankConnection: mockBankConnection,
+          providerAccountId: `${mockConnectionId}-default`,
           name: 'DBS Bank',
-          type: 'OTHER',
-          institution: 'DBS Bank',
-          metadata: {
-            connectionId: mockConnectionId,
-            scraperIdentifier: 'dbs',
+          mask: '1234',
+          type: {
+            type: 'DEPOSITORY',
+            subtype: 'SAVINGS',
           },
+          balances: {},
         },
       ]);
     });
@@ -267,67 +269,40 @@ describe('ScraperAdapter', () => {
       // Check first transaction (credit - negative amount becomes positive)
       expect(result[0]).toEqual({
         id: `${mockConnectionId}-DBS Savings Account-2024-01-15-REF001`,
-        accountId: `${mockConnectionId}-DBS Savings Account`,
+        accountId: `${mockAccountId}`,
+        providerTransactionId: 'REF001',
+        providerAccountId: `${mockAccountId}`,
         date: '2024-01-15',
-        description: 'REF001 - Transfer - From Checking - Online Banking',
-        amount: 100.5, // Absolute value
-        currency: 'SGD',
-        type: 'CREDIT', // Negative amount = CREDIT
+        name: 'REF001 - Transfer - From Checking - Online Banking',
+        amount: -100.5,
+        isoCurrencyCode: 'SGD',
         pending: false,
-        metadata: {
-          originalAmount: -100.5,
-          reference: 'REF001',
-          transactionRef1: 'Transfer',
-          transactionRef2: 'From Checking',
-          transactionRef3: 'Online Banking',
-          accountName: 'DBS Savings Account',
-          accountBalance: 5500.75,
-          accountType: 'savings_or_checking',
-        },
       });
 
       // Check second transaction (debit - positive amount)
       expect(result[1]).toEqual({
         id: `${mockConnectionId}-DBS Savings Account-2024-01-20-REF002`,
-        accountId: `${mockConnectionId}-DBS Savings Account`,
+        accountId: `${mockAccountId}`,
+        providerTransactionId: 'REF002',
+        providerAccountId: `${mockAccountId}`,
         date: '2024-01-20',
-        description: 'REF002 - Deposit - Salary',
+        name: 'REF002 - Deposit - Salary',
         amount: 2500.0,
-        currency: 'SGD',
-        type: 'DEBIT', // Positive amount = DEBIT
+        isoCurrencyCode: 'SGD',
         pending: false,
-        metadata: {
-          originalAmount: 2500.0,
-          reference: 'REF002',
-          transactionRef1: 'Deposit',
-          transactionRef2: 'Salary',
-          transactionRef3: '',
-          accountName: 'DBS Savings Account',
-          accountBalance: 5500.75,
-          accountType: 'savings_or_checking',
-        },
       });
 
       // Check credit card transaction
       expect(result[2]).toEqual({
         id: `${mockConnectionId}-DBS Credit Card-2024-01-10-REF003`,
-        accountId: `${mockConnectionId}-DBS Credit Card`,
+        accountId: `${mockAccountId}`,
+        providerTransactionId: 'REF003',
+        providerAccountId: `${mockAccountId}`,
         date: '2024-01-10',
-        description: 'REF003 - Purchase - Grocery Store - POS Transaction',
-        amount: 45.25, // Absolute value
-        currency: 'SGD',
-        type: 'CREDIT', // Negative amount = CREDIT
+        name: 'REF003 - Purchase - Grocery Store - POS Transaction',
+        amount: -45.25,
+        isoCurrencyCode: 'SGD',
         pending: false,
-        metadata: {
-          originalAmount: -45.25,
-          reference: 'REF003',
-          transactionRef1: 'Purchase',
-          transactionRef2: 'Grocery Store',
-          transactionRef3: 'POS Transaction',
-          accountName: 'DBS Credit Card',
-          accountBalance: -1200.0,
-          accountType: 'credit_card',
-        },
       });
     });
 

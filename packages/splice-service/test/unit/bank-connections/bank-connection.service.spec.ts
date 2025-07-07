@@ -237,10 +237,11 @@ describe('BankConnectionService', () => {
       {
         id: 'tx1',
         accountId: 'acc1',
+        providerTransactionId: 'tx1',
+        providerAccountId: 'acc1',
         date: '2024-01-01',
-        description: 'Test transaction',
+        name: 'Test transaction',
         amount: 100,
-        type: 'CREDIT' as const,
         pending: false,
       },
     ];

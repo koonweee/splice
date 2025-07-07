@@ -2,7 +2,14 @@ import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PlaidApi } from 'plaid';
-import { BankConnection, BankConnectionStatus, DataSourceType, StandardizedAccountType } from 'splice-api';
+import {
+  AccountType,
+  BankConnection,
+  BankConnectionStatus,
+  CreditAccountSubtype,
+  DataSourceType,
+  DepositoryAccountSubtype,
+} from 'splice-api';
 import { PlaidAdapter } from '../../../../src/data-sources/adapters/plaid.adapter';
 import { VaultService } from '../../../../src/vault/vault.service';
 
@@ -363,9 +370,14 @@ describe('PlaidAdapter', () => {
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
         id: 'account-123',
+        bankConnection: mockBankConnection,
+        providerAccountId: 'account-123',
         name: 'Chase Checking',
         mask: '1234',
-        type: StandardizedAccountType.CHECKING,
+        type: {
+          type: AccountType.DEPOSITORY,
+          subtype: DepositoryAccountSubtype.CHECKING,
+        },
         balances: {
           current: 1000.5,
           available: 950.5,
@@ -373,13 +385,17 @@ describe('PlaidAdapter', () => {
           unofficialCurrencyCode: undefined,
           lastUpdated: '2024-01-01T10:00:00Z',
         },
-        institution: 'Chase Bank',
       });
       expect(result[1]).toEqual({
         id: 'account-456',
+        bankConnection: mockBankConnection,
+        providerAccountId: 'account-456',
         name: 'Chase Credit Card',
         mask: '5678',
-        type: StandardizedAccountType.CREDIT_CARD,
+        type: {
+          type: AccountType.CREDIT,
+          subtype: CreditAccountSubtype.CREDIT_CARD,
+        },
         balances: {
           current: -500.25,
           available: 2000.0,
@@ -387,7 +403,6 @@ describe('PlaidAdapter', () => {
           unofficialCurrencyCode: undefined,
           lastUpdated: '2024-01-01T10:00:00Z',
         },
-        institution: 'Chase Bank',
       });
     });
 
@@ -425,32 +440,47 @@ describe('PlaidAdapter', () => {
   describe('plaidAccountTypeToStandardizedAccountType', () => {
     it('should convert depository checking to CHECKING', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'checking' as any);
-      expect(result).toBe(StandardizedAccountType.CHECKING);
+      expect(result).toEqual({
+        type: AccountType.DEPOSITORY,
+        subtype: DepositoryAccountSubtype.CHECKING,
+      });
     });
 
     it('should convert depository savings to SAVINGS', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'savings' as any);
-      expect(result).toBe(StandardizedAccountType.SAVINGS);
+      expect(result).toEqual({
+        type: AccountType.DEPOSITORY,
+        subtype: DepositoryAccountSubtype.SAVINGS,
+      });
     });
 
     it('should convert credit to CREDIT_CARD', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('credit' as any, null);
-      expect(result).toBe(StandardizedAccountType.CREDIT_CARD);
+      expect(result).toEqual({
+        type: AccountType.CREDIT,
+        subtype: CreditAccountSubtype.CREDIT_CARD,
+      });
     });
 
     it('should convert investment to INVESTMENT', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('investment' as any, null);
-      expect(result).toBe(StandardizedAccountType.INVESTMENT);
+      expect(result).toEqual({
+        type: AccountType.INVESTMENT,
+      });
     });
 
     it('should return OTHER for unknown account types', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('unknown' as any, null);
-      expect(result).toBe(StandardizedAccountType.OTHER);
+      expect(result).toEqual({
+        type: AccountType.OTHER,
+      });
     });
 
     it('should return OTHER for depository with unknown subtype', () => {
       const result = adapter.plaidAccountTypeToStandardizedAccountType('depository' as any, 'unknown' as any);
-      expect(result).toBe(StandardizedAccountType.OTHER);
+      expect(result).toEqual({
+        type: AccountType.DEPOSITORY,
+      });
     });
   });
 
@@ -473,13 +503,18 @@ describe('PlaidAdapter', () => {
         },
       };
 
-      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, 'Test Bank');
+      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, mockBankConnection);
 
       expect(result).toEqual({
         id: 'test-account-id',
+        bankConnection: mockBankConnection,
+        providerAccountId: 'test-account-id',
         name: 'Test Account',
         mask: '1234',
-        type: StandardizedAccountType.CHECKING,
+        type: {
+          type: AccountType.DEPOSITORY,
+          subtype: DepositoryAccountSubtype.CHECKING,
+        },
         balances: {
           current: 1000.5,
           available: 950.5,
@@ -487,7 +522,6 @@ describe('PlaidAdapter', () => {
           unofficialCurrencyCode: undefined,
           lastUpdated: '2024-01-01T10:00:00Z',
         },
-        institution: 'Test Bank',
       });
     });
 
@@ -509,13 +543,18 @@ describe('PlaidAdapter', () => {
         },
       };
 
-      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, 'Test Bank');
+      const result = adapter.plaidAccountToStandardizedAccount(plaidAccount, mockBankConnection);
 
       expect(result).toEqual({
         id: 'test-account-id',
+        bankConnection: mockBankConnection,
+        providerAccountId: 'test-account-id',
         name: 'Test Account',
         mask: undefined,
-        type: StandardizedAccountType.CREDIT_CARD,
+        type: {
+          type: AccountType.CREDIT,
+          subtype: CreditAccountSubtype.CREDIT_CARD,
+        },
         balances: {
           current: undefined,
           available: undefined,
@@ -523,7 +562,6 @@ describe('PlaidAdapter', () => {
           unofficialCurrencyCode: undefined,
           lastUpdated: undefined,
         },
-        institution: 'Test Bank',
       });
     });
   });
@@ -592,32 +630,32 @@ describe('PlaidAdapter', () => {
       expect(result[0]).toEqual({
         id: 'tx-123',
         accountId: 'account-123',
+        providerTransactionId: 'tx-123',
+        providerAccountId: 'account-123',
         date: '2024-01-15',
-        datetime: '2024-01-15T10:30:00Z',
-        description: 'Coffee Shop Purchase',
-        merchantName: 'Starbucks',
+        name: 'Coffee Shop Purchase',
         pending: false,
         logoUrl: 'https://example.com/logo.png',
         websiteUrl: 'https://starbucks.com',
         amount: 5.25,
         isoCurrencyCode: 'USD',
         unofficialCurrencyCode: undefined,
-        type: 'DEBIT', // Positive amount = DEBIT
+        category: undefined,
       });
       expect(result[1]).toEqual({
         id: 'tx-456',
         accountId: 'account-123',
+        providerTransactionId: 'tx-456',
+        providerAccountId: 'account-123',
         date: '2024-01-16',
-        datetime: undefined,
-        description: 'ATM Withdrawal',
-        merchantName: undefined,
+        name: 'ATM Withdrawal',
         pending: true,
         logoUrl: undefined,
         websiteUrl: undefined,
         amount: 100.0,
         isoCurrencyCode: 'USD',
         unofficialCurrencyCode: undefined,
-        type: 'DEBIT', // Positive amount = DEBIT
+        category: undefined,
       });
     });
 
@@ -713,22 +751,21 @@ describe('PlaidAdapter', () => {
         original_description: null,
       } as any;
 
-      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction, mockAccountId);
 
       expect(result).toEqual({
         id: 'tx-789',
-        accountId: 'account-456',
+        accountId: mockAccountId,
+        providerTransactionId: 'tx-789',
+        providerAccountId: mockAccountId,
         date: '2024-01-20',
-        datetime: '2024-01-20T14:30:00Z',
-        description: 'Amazon Purchase',
-        merchantName: 'Amazon',
+        name: 'Amazon Purchase',
         pending: false,
         logoUrl: 'https://example.com/amazon-logo.png',
         websiteUrl: 'https://amazon.com',
         amount: 25.99,
         isoCurrencyCode: 'USD',
         unofficialCurrencyCode: undefined,
-        type: 'DEBIT', // Positive amount = DEBIT
       });
     });
 
@@ -757,22 +794,21 @@ describe('PlaidAdapter', () => {
         original_description: null,
       } as any;
 
-      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction, mockAccountId);
 
       expect(result).toEqual({
         id: 'tx-null-fields',
-        accountId: 'account-null',
+        accountId: mockAccountId,
+        providerTransactionId: 'tx-null-fields',
+        providerAccountId: mockAccountId,
         date: '2024-01-21',
-        datetime: undefined,
-        description: 'Cash Withdrawal',
-        merchantName: undefined,
+        name: 'Cash Withdrawal',
         pending: true,
         logoUrl: undefined,
         websiteUrl: undefined,
         amount: 50.0,
         isoCurrencyCode: undefined,
         unofficialCurrencyCode: undefined,
-        type: 'DEBIT', // Positive amount = DEBIT
       });
     });
 
@@ -801,22 +837,21 @@ describe('PlaidAdapter', () => {
         original_description: null,
       } as any;
 
-      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction, mockAccountId);
 
       expect(result).toEqual({
         id: 'tx-credit',
-        accountId: 'account-credit',
+        accountId: mockAccountId,
+        providerTransactionId: 'tx-credit',
+        providerAccountId: mockAccountId,
         date: '2024-01-22',
-        datetime: '2024-01-22T09:00:00Z',
-        description: 'Refund',
-        merchantName: 'Store',
+        name: 'Refund',
         pending: false,
         logoUrl: undefined,
         websiteUrl: undefined,
         amount: -15.75,
         isoCurrencyCode: 'USD',
         unofficialCurrencyCode: undefined,
-        type: 'CREDIT', // Negative amount = CREDIT
       });
     });
 
@@ -845,22 +880,21 @@ describe('PlaidAdapter', () => {
         original_description: null,
       } as any;
 
-      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction);
+      const result = adapter.plaidTransactionToStandardizedTransaction(plaidTransaction, mockAccountId);
 
       expect(result).toEqual({
         id: 'tx-zero',
-        accountId: 'account-zero',
+        accountId: mockAccountId,
+        providerTransactionId: 'tx-zero',
+        providerAccountId: mockAccountId,
         date: '2024-01-23',
-        datetime: '2024-01-23T12:00:00Z',
-        description: 'Balance Inquiry',
-        merchantName: 'Bank',
+        name: 'Balance Inquiry',
         pending: false,
         logoUrl: undefined,
         websiteUrl: undefined,
         amount: 0,
         isoCurrencyCode: 'USD',
         unofficialCurrencyCode: undefined,
-        type: 'CREDIT', // Zero amount = CREDIT (amount <= 0)
       });
     });
   });
