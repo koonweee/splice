@@ -1,6 +1,7 @@
 import { type MiddlewareConsumer, Module, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AccountsModule } from './accounts/accounts.module';
 import { ApiKeyStoreModule } from './api-key-store/api-key-store.module';
 import { AuthModule } from './auth/auth.module';
 import { BankConnectionsModule } from './bank-connections/bank-connections.module';
@@ -10,6 +11,7 @@ import { DataSourcesModule } from './data-sources/data-sources.module';
 import { HealthModule } from './health/health.module';
 import { SecurityHeadersMiddleware } from './middleware/security-headers.middleware';
 import { ScraperModule } from './scraper/scraper.module';
+import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -32,14 +34,16 @@ import { UsersModule } from './users/users.module';
       }),
       inject: [ConfigService],
     }),
+    AccountsModule,
+    ApiKeyStoreModule,
     AuthModule,
-    ScraperModule,
+    BankConnectionsModule,
+    BankRegistryModule,
     DataSourcesModule,
     HealthModule,
+    ScraperModule,
+    TransactionsModule,
     UsersModule,
-    ApiKeyStoreModule,
-    BankRegistryModule,
-    BankConnectionsModule,
   ],
 })
 export class AppModule implements NestModule {
