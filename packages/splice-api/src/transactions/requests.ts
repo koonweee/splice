@@ -1,4 +1,4 @@
-import { StandardizedTransaction } from '../ledger';
+import type { StandardizedTransaction } from '../ledger';
 
 export interface TransactionByIdParams {
   transactionId: string;
@@ -15,7 +15,8 @@ export interface TransactionQueryParams {
 
 export interface CreateTransactionRequest extends Omit<StandardizedTransaction, 'id'> {}
 
-export interface UpdateTransactionRequest extends Partial<Omit<StandardizedTransaction, 'id' | 'accountId' | 'providerTransactionId' | 'providerAccountId'>> {}
+export interface UpdateTransactionRequest
+  extends Partial<Omit<StandardizedTransaction, 'id' | 'accountId' | 'providerTransactionId' | 'providerAccountId'>> {}
 
 export interface TransactionResponse extends StandardizedTransaction {
   createdAt: Date;

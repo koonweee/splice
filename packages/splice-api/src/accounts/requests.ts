@@ -1,4 +1,4 @@
-import { StandardizedAccount, StandardizedAccountBalances } from '../ledger';
+import type { StandardizedAccount, StandardizedAccountBalances } from '../ledger';
 
 export interface AccountByIdParams {
   accountId: string;
